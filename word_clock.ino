@@ -16,7 +16,12 @@ enum ControllerPattern
 {
     NONE,
     SINGLE_COLOR,
-    RAINBOW
+    HUE_CYCLE,
+    RAINBOW_CYCLE,
+    THEATER_CHASE,
+    COLOR_WIPE,
+    SCANNER,
+    FADE
 };
 enum PatternDirection
 {
@@ -38,6 +43,9 @@ public:
     uint16_t TotalSteps;     // total number of steps in the pattern
     uint16_t Index;          // current step within the pattern
     uint16_t Seed;
+
+    uint8_t MaxLoops;
+    uint8_t LoopIndex;
 
     Adafruit_NeoPixel &NeoPixel;
 
@@ -74,9 +82,29 @@ public:
 
         switch (ActivePattern)
         {
-        case RAINBOW:
-            RainbowUpdate();
+        case HUE_CYCLE:
+            HueCycleUpdate();
             return;
+
+        case RAINBOW_CYCLE:
+            RainbowCycleUpdate();
+            break;
+
+        case THEATER_CHASE:
+            TheaterChaseUpdate();
+            break;
+
+        case COLOR_WIPE:
+            ColorWipeUpdate();
+            break;
+
+        case SCANNER:
+            ScannerUpdate();
+            break;
+
+        case FADE:
+            FadeUpdate();
+            break;
 
         default:
             return;
@@ -89,29 +117,45 @@ public:
         {
             Index++;
 
-            if (TotalSteps > 0 && Index >= TotalSteps)
+            if (Index >= TotalSteps)
             {
                 Index = 0;
 
-                if (OnComplete != NULL)
-                {
-                    OnComplete();
-                }
+                CheckCompletion();
             }
         }
         else
         {
             --Index;
 
-            if (TotalSteps > 0 && Index <= 0)
+            if (Index <= 0)
             {
                 Index = TotalSteps - 1;
 
-                if (OnComplete != NULL)
-                {
-                    OnComplete();
-                }
+                CheckCompletion();
             }
+        }
+    }
+
+    void CheckCompletion()
+    {
+        if (MaxLoops == 0)
+        {
+            return;
+        }
+
+        LoopIndex++;
+
+        if (LoopIndex < MaxLoops)
+        {
+            return;
+        }
+
+        Clear();
+
+        if (OnComplete != NULL)
+        {
+            OnComplete();
         }
     }
 
@@ -127,54 +171,6 @@ public:
             Direction = FORWARD;
             Index = 0;
         }
-    }
-
-    void SetSingleColor(uint32_t color)
-    {
-        ActivePattern = SINGLE_COLOR;
-        Interval = 0;
-        TotalSteps = 0;
-        Index = 0;
-        Direction = FORWARD;
-        Seed = 0;
-
-        Color1 = color;
-        Color2 = 0;
-
-        ColorSet(color);
-    }
-
-    void SetRainbow(uint8_t interval = 40, PatternDirection dir = FORWARD)
-    {
-        ActivePattern = RAINBOW;
-        Interval = interval;
-        TotalSteps = 255;
-        Index = 0;
-        Direction = dir;
-        Seed = random(0, 255);
-
-        Color1 = 0;
-        Color2 = 0;
-    }
-
-    void RainbowUpdate()
-    {
-        uint16_t hue = ((Seed + Index) % 255) * 65536 / 255;
-
-        ColorSet(NeoPixel.ColorHSV(hue));
-
-        Increment();
-    }
-
-    // Set all pixels to a color (synchronously)
-    void ColorSet(uint32_t color)
-    {
-        for (uint8_t i = StartPixel; i <= EndPixel; i++)
-        {
-            NeoPixel.setPixelColor(i, color);
-        }
-
-        NeoPixel.show();
     }
 
     void Clear()
@@ -194,7 +190,223 @@ public:
         Color1 = 0;
         Color2 = 0;
 
+        LoopIndex = 0;
+        MaxLoops = 0;
+
         ColorSet(NeoPixel.Color(0, 0, 0));
+    }
+
+    void SetSingleColor(uint32_t color)
+    {
+        ActivePattern = SINGLE_COLOR;
+        Interval = 0;
+        TotalSteps = 0;
+        Index = 0;
+        Direction = FORWARD;
+        Seed = 0;
+
+        Color1 = color;
+        Color2 = 0;
+
+        LoopIndex = 0;
+        MaxLoops = 0;
+
+        ColorSet(color);
+    }
+
+    void HueCycle(uint8_t interval = 40, PatternDirection dir = FORWARD, uint8_t loops = 0)
+    {
+        ActivePattern = HUE_CYCLE;
+        Interval = interval;
+        TotalSteps = 256;
+        Index = 0;
+        Direction = dir;
+        Seed = random(256);
+
+        Color1 = 0;
+        Color2 = 0;
+
+        LoopIndex = 0;
+        MaxLoops = loops;
+    }
+
+    void HueCycleUpdate()
+    {
+        ColorSet(Wheel((Seed + Index) % 256));
+        Increment();
+    }
+
+    // Initialize for a RainbowCycle
+    void RainbowCycle(uint8_t interval = 10, PatternDirection dir = FORWARD, uint8_t loops = 0)
+    {
+        ActivePattern = RAINBOW_CYCLE;
+        Interval = interval;
+        TotalSteps = 255;
+        Index = 0;
+        Direction = dir;
+        Seed = 0;
+
+        Color1 = 0;
+        Color2 = 0;
+
+        LoopIndex = 0;
+        MaxLoops = loops;
+    }
+
+    // Update the Rainbow Cycle Pattern
+    void RainbowCycleUpdate()
+    {
+        uint8_t numPixels = GetNumPixels();
+
+        for (uint8_t i = StartPixel; i <= EndPixel; i++)
+        {
+            NeoPixel.setPixelColor(i, Wheel(((i * 256 / numPixels) + Index) & 255));
+        }
+
+        NeoPixel.show();
+        Increment();
+    }
+
+    // Initialize for a Theater Chase
+    void TheaterChase(uint8_t interval = 10, uint32_t color1 = 0, uint32_t color2 = 0, PatternDirection dir = FORWARD, uint8_t loops = 0)
+    {
+        ActivePattern = THEATER_CHASE;
+        Interval = interval;
+        TotalSteps = GetNumPixels();
+        Index = 0;
+        Direction = dir;
+        Seed = 0;
+
+        Color1 = color1 == 0 ? GetRandomColor() : color1;
+        Color2 = color2 == 0 ? GetRandomColor() : color2;
+
+        LoopIndex = 0;
+        MaxLoops = loops;
+    }
+
+    // Update the Theater Chase Pattern
+    void TheaterChaseUpdate()
+    {
+        for (uint8_t i = StartPixel; i <= EndPixel; i++)
+        {
+            if ((i + Index) % 3 == 0)
+            {
+                NeoPixel.setPixelColor(i, Color1);
+            }
+            else
+            {
+                NeoPixel.setPixelColor(i, Color2);
+            }
+        }
+
+        NeoPixel.show();
+        Increment();
+    }
+
+    // Initialize for a ColorWipe
+    void ColorWipe(uint8_t interval = 10, uint32_t color = 0, PatternDirection dir = FORWARD, uint8_t loops = 0)
+    {
+        ActivePattern = COLOR_WIPE;
+        Interval = interval;
+        TotalSteps = GetNumPixels();
+        Index = 0;
+        Direction = dir;
+        Seed = 0;
+
+        Color1 = color == 0 ? GetRandomColor() : color;
+        Color2 = 0;
+
+        LoopIndex = 0;
+        MaxLoops = loops;
+    }
+
+    // Update the Color Wipe Pattern
+    void ColorWipeUpdate()
+    {
+        NeoPixel.setPixelColor(Index, Color1);
+        NeoPixel.show();
+        Increment();
+    }
+
+    // Initialize for a SCANNNER
+    void Scanner(uint8_t interval, uint32_t color = 0, uint8_t loops = 0)
+    {
+        ActivePattern = SCANNER;
+        Interval = interval;
+        TotalSteps = (GetNumPixels() - 1) * 2;
+        Index = 0;
+        Direction = FORWARD;
+        Seed = 0;
+
+        Color1 = color == 0 ? GetRandomColor() : color;
+        Color2 = 0;
+
+        LoopIndex = 0;
+        MaxLoops = loops;
+    }
+
+    // Update the Scanner Pattern
+    void ScannerUpdate()
+    {
+        for (uint8_t i = StartPixel; i <= EndPixel; i++)
+        {
+            if (i == Index) // Scan Pixel to the right
+            {
+                NeoPixel.setPixelColor(i, Color1);
+            }
+            else if (i == TotalSteps - Index) // Scan Pixel to the left
+            {
+                NeoPixel.setPixelColor(i, Color1);
+            }
+            else // Fading tail
+            {
+                NeoPixel.setPixelColor(i, DimColor(NeoPixel.getPixelColor(i)));
+            }
+        }
+
+        NeoPixel.show();
+        Increment();
+    }
+
+    // Initialize for a Fade
+    void Fade(uint8_t interval = 10, uint32_t color1 = 0, uint32_t color2 = 0, PatternDirection dir = FORWARD, uint8_t loops = 0)
+    {
+        ActivePattern = FADE;
+        Interval = interval;
+        TotalSteps = 255;
+        Index = 0;
+        Direction = dir;
+        Seed = 0;
+
+        Color1 = color1 == 0 ? GetRandomColor() : color1;
+        Color2 = color2 == 0 ? GetRandomColor() : color2;
+
+        LoopIndex = 0;
+        MaxLoops = loops;
+    }
+
+    // Update the Fade Pattern
+    void FadeUpdate()
+    {
+        // Calculate linear interpolation between Color1 and Color2
+        // Optimise order of operations to minimize truncation error
+        uint8_t red = ((Red(Color1) * (TotalSteps - Index)) + (Red(Color2) * Index)) / TotalSteps;
+        uint8_t green = ((Green(Color1) * (TotalSteps - Index)) + (Green(Color2) * Index)) / TotalSteps;
+        uint8_t blue = ((Blue(Color1) * (TotalSteps - Index)) + (Blue(Color2) * Index)) / TotalSteps;
+
+        ColorSet(NeoPixel.Color(red, green, blue));
+        Increment();
+    }
+
+    // Set all pixels to a color (synchronously)
+    void ColorSet(uint32_t color)
+    {
+        for (uint8_t i = StartPixel; i <= EndPixel; i++)
+        {
+            NeoPixel.setPixelColor(i, color);
+        }
+
+        NeoPixel.show();
     }
 
     // Returns the Red component of a 32-bit color
@@ -217,25 +429,30 @@ public:
 
     // Input a value 0 to 255 to get a color value.
     // The colours are a transition r - g - b - back to r.
-
-    uint32_t Wheel(uint8_t WheelPos)
+    uint32_t Wheel(uint8_t pos)
     {
-        WheelPos = 255 - WheelPos;
+        uint16_t hue = pos * 65535 / 255;
 
-        if (WheelPos < 85)
-        {
-            return NeoPixel.Color(255 - WheelPos * 3, 0, WheelPos * 3);
-        }
-        else if (WheelPos < 170)
-        {
-            WheelPos -= 85;
-            return NeoPixel.Color(0, WheelPos * 3, 255 - WheelPos * 3);
-        }
-        else
-        {
-            WheelPos -= 170;
-            return NeoPixel.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
-        }
+        return NeoPixel.ColorHSV(hue);
+    }
+
+    // Calculate 50% dimmed version of a color (used by ScannerUpdate)
+    uint32_t DimColor(uint32_t color)
+    {
+        // Shift R, G and B components one bit to the right
+        return NeoPixel.Color(Red(color) >> 1, Green(color) >> 1, Blue(color) >> 1);
+    }
+
+    uint32_t GetRandomColor()
+    {
+        uint16_t hue = random(65536);
+
+        return NeoPixel.ColorHSV(hue);
+    }
+
+    uint8_t GetNumPixels()
+    {
+        return EndPixel - StartPixel + 1;
     }
 };
 
@@ -255,6 +472,8 @@ uint8_t TimeHrOffset = 0;
 enum SpecialPattern
 {
     SP_NONE,
+    SP_DEMO,
+    SP_LIGHT_SHOW,
     SP_HAPPY_BIRTHDAY
 };
 
@@ -265,6 +484,10 @@ uint8_t SpecialPatternIndex = 0;
 
 // INIT NEOPIXEL
 Adafruit_NeoPixel WC_Strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+
+void onPatternComplete();
+
+Controller C_ALL(WC_Strip, 0, 119, &onPatternComplete);
 
 Controller C_TWENTY(WC_Strip, 0, 5, NULL);
 Controller C_IS(WC_Strip, 7, 8, NULL);
@@ -338,11 +561,18 @@ void checkButton()
 
     if (digitalRead(BUTTON_PIN) != LOW)
     {
-        if (ButtonPressed == true && (millis() - TimeSinceButtonPress) > 200)
+        unsigned long duration = millis() - TimeSinceButtonPress;
+
+        if (ButtonPressed == true && duration > 200)
         {
             Serial.println("Button UP");
 
             ButtonPressed = false;
+
+            if (duration < 1000)
+            {
+                setSpecialPattern(SP_DEMO);
+            }
         }
 
         return;
@@ -484,90 +714,90 @@ void updateTime(uint8_t currentHr, uint8_t currentMin)
     clearControllers();
 
     // IT IS
-    C_IT.SetRainbow();
-    C_IS.SetRainbow();
+    C_IT.HueCycle();
+    C_IS.HueCycle();
 
     switch (currentMinInterval)
     {
     // FIVE MINUTES PAST
     case 1:
-        C_FIVE.SetRainbow();
-        C_MINUTES.SetRainbow();
-        C_PAST.SetRainbow();
+        C_FIVE.HueCycle();
+        C_MINUTES.HueCycle();
+        C_PAST.HueCycle();
         break;
 
     // TEN MINUTES PAST
     case 2:
-        C_TEN.SetRainbow();
-        C_MINUTES.SetRainbow();
-        C_PAST.SetRainbow();
+        C_TEN.HueCycle();
+        C_MINUTES.HueCycle();
+        C_PAST.HueCycle();
         break;
 
     // QUARTER PAST
     case 3:
-        C_QUARTER.SetRainbow();
-        C_PAST.SetRainbow();
+        C_QUARTER.HueCycle();
+        C_PAST.HueCycle();
         break;
 
     // TWENTY MINUTES PAST
     case 4:
-        C_TWENTY.SetRainbow();
-        C_MINUTES.SetRainbow();
-        C_PAST.SetRainbow();
+        C_TWENTY.HueCycle();
+        C_MINUTES.HueCycle();
+        C_PAST.HueCycle();
         break;
 
     // TWENTY FIVE MINUTES PAST
     case 5:
-        C_TWENTY.SetRainbow();
-        C_FIVE.SetRainbow();
-        C_MINUTES.SetRainbow();
-        C_PAST.SetRainbow();
+        C_TWENTY.HueCycle();
+        C_FIVE.HueCycle();
+        C_MINUTES.HueCycle();
+        C_PAST.HueCycle();
         break;
 
     // HALF PAST
     case 6:
-        C_HALF.SetRainbow();
-        C_PAST.SetRainbow();
+        C_HALF.HueCycle();
+        C_PAST.HueCycle();
         break;
 
     // TWENTY FIVE MINUTES TO
     case 7:
         currentHr++;
-        C_TWENTY.SetRainbow();
-        C_FIVE.SetRainbow();
-        C_MINUTES.SetRainbow();
-        C_TO.SetRainbow();
+        C_TWENTY.HueCycle();
+        C_FIVE.HueCycle();
+        C_MINUTES.HueCycle();
+        C_TO.HueCycle();
         break;
 
     // TWENTY MINUTES TO
     case 8:
         currentHr++;
-        C_TWENTY.SetRainbow();
-        C_MINUTES.SetRainbow();
-        C_TO.SetRainbow();
+        C_TWENTY.HueCycle();
+        C_MINUTES.HueCycle();
+        C_TO.HueCycle();
         break;
 
     // QUARTER TO
     case 9:
         currentHr++;
-        C_QUARTER.SetRainbow();
-        C_TO.SetRainbow();
+        C_QUARTER.HueCycle();
+        C_TO.HueCycle();
         break;
 
     // TEN MINUTES TO
     case 10:
         currentHr++;
-        C_TEN.SetRainbow();
-        C_MINUTES.SetRainbow();
-        C_TO.SetRainbow();
+        C_TEN.HueCycle();
+        C_MINUTES.HueCycle();
+        C_TO.HueCycle();
         break;
 
     // FIVE MINUTES TO
     case 11:
         currentHr++;
-        C_FIVE.SetRainbow();
-        C_MINUTES.SetRainbow();
-        C_TO.SetRainbow();
+        C_FIVE.HueCycle();
+        C_MINUTES.HueCycle();
+        C_TO.HueCycle();
         break;
 
     // N\A
@@ -580,77 +810,77 @@ void updateTime(uint8_t currentHr, uint8_t currentMin)
     // ONE
     case 1:
     case 13:
-        C_HR_ONE.SetRainbow();
+        C_HR_ONE.HueCycle();
         break;
 
     // TWO
     case 2:
     case 14:
-        C_HR_TWO.SetRainbow();
+        C_HR_TWO.HueCycle();
         break;
 
     // THREE
     case 3:
     case 15:
-        C_HR_THREE.SetRainbow();
+        C_HR_THREE.HueCycle();
         break;
 
     // FOUR
     case 4:
     case 16:
-        C_HR_FOUR.SetRainbow();
+        C_HR_FOUR.HueCycle();
         break;
 
     // FIVE
     case 5:
     case 17:
-        C_HR_FIVE.SetRainbow();
+        C_HR_FIVE.HueCycle();
         break;
 
     // SIX
     case 6:
     case 18:
-        C_HR_SIX.SetRainbow();
+        C_HR_SIX.HueCycle();
         break;
 
     // SEVEN
     case 7:
     case 19:
-        C_HR_SEVEN.SetRainbow();
+        C_HR_SEVEN.HueCycle();
         break;
 
     // EIGHT
     case 8:
     case 20:
-        C_HR_EIGHT.SetRainbow();
+        C_HR_EIGHT.HueCycle();
         break;
 
     // NINE
     case 9:
     case 21:
-        C_HR_NINE.SetRainbow();
+        C_HR_NINE.HueCycle();
         break;
 
     // TEN
     case 10:
     case 22:
-        C_HR_TEN.SetRainbow();
+        C_HR_TEN.HueCycle();
         break;
 
     // ELEVEN
     case 11:
     case 23:
-        C_HR_ELEVEN.SetRainbow();
+        C_HR_ELEVEN.HueCycle();
         break;
 
     // TWELVE
     default:
-        C_HR_TWELVE.SetRainbow();
+        C_HR_TWELVE.HueCycle();
         break;
     }
 
     // OCLOCK
-    C_OCLOCK.SetRainbow();
+    C_OCLOCK.HueCycle();
 }
 
 // UPDATE CONTROLLERS
@@ -717,8 +947,6 @@ void clearControllers()
     C_HR_EIGHT.Clear();
 }
 
-// CALLBACKS
-
 // SPECIAL PATTERNS
 
 void setSpecialPattern(SpecialPattern pattern)
@@ -728,6 +956,45 @@ void setSpecialPattern(SpecialPattern pattern)
     CurrentSpecialPattern = pattern;
     SpecialPatternLastUpdate = millis();
     SpecialPatternIndex = 0;
+
+    switch (pattern)
+    {
+    case SP_DEMO:
+        pickRandomDemo();
+        return;
+    }
+}
+
+void pickRandomDemo()
+{
+    uint8_t i = random(6);
+
+    switch (i)
+    {
+    case 0:
+        C_ALL.HueCycle(4, FORWARD, 10);
+        return;
+
+    case 1:
+        C_ALL.RainbowCycle(8, FORWARD, 5);
+        return;
+
+    case 2:
+        C_ALL.TheaterChase(100, 0, 0, FORWARD, 3);
+        return;
+
+    case 3:
+        C_ALL.ColorWipe(8, 0, FORWARD, 10);
+        return;
+
+    case 4:
+        C_ALL.Scanner(50, 0, 5);
+        return;
+
+    case 5:
+        C_ALL.Fade(8, 0, 0, FORWARD, 5);
+        return;
+    }
 }
 
 void updateSpecialPattern()
@@ -737,10 +1004,30 @@ void updateSpecialPattern()
     case SP_NONE:
         return;
 
+    case SP_DEMO:
+    case SP_LIGHT_SHOW:
+        C_ALL.Update();
+        return;
+
     case SP_HAPPY_BIRTHDAY:
         updateHappyBirthday();
         return;
     }
+}
+
+void clearSpecialPattern()
+{    
+    CurrentSpecialPattern = SP_NONE;
+    SpecialPatternIndex = 0;
+
+    C_ALL.Clear();
+
+    forceTimeUpdate();
+}
+
+void onPatternComplete()
+{
+    clearSpecialPattern();
 }
 
 void updateHappyBirthday()
@@ -758,7 +1045,7 @@ void updateHappyBirthday()
             return;
         }
 
-        C_HAPPY.SetRainbow(4);
+        C_HAPPY.HueCycle(4);
         break;
 
     case 1:
@@ -768,8 +1055,8 @@ void updateHappyBirthday()
             return;
         }
 
-        C_BIRTH.SetRainbow(4);
-        C_DAY.SetRainbow(4);
+        C_BIRTH.HueCycle(4);
+        C_DAY.HueCycle(4);
         break;
 
     case 2:
@@ -799,9 +1086,9 @@ void updateHappyBirthday()
             return;
         }
 
-        C_HAPPY.SetRainbow(4);
-        C_BIRTH.SetRainbow(4);
-        C_DAY.SetRainbow(4);
+        C_HAPPY.HueCycle(4);
+        C_BIRTH.HueCycle(4);
+        C_DAY.HueCycle(4);
         C_ALICE.SetSingleColor(WC_Strip.Color(248, 24, 148));
         break;
 
@@ -822,9 +1109,9 @@ void updateHappyBirthday()
             return;
         }
 
-        C_HAPPY.SetRainbow(4);
-        C_BIRTH.SetRainbow(4);
-        C_DAY.SetRainbow(4);
+        C_HAPPY.HueCycle(4);
+        C_BIRTH.HueCycle(4);
+        C_DAY.HueCycle(4);
         C_ALICE.SetSingleColor(WC_Strip.Color(248, 24, 148));
         break;
 
@@ -845,9 +1132,9 @@ void updateHappyBirthday()
             return;
         }
 
-        C_HAPPY.SetRainbow(4);
-        C_BIRTH.SetRainbow(4);
-        C_DAY.SetRainbow(4);
+        C_HAPPY.HueCycle(4);
+        C_BIRTH.HueCycle(4);
+        C_DAY.HueCycle(4);
         C_ALICE.SetSingleColor(WC_Strip.Color(248, 24, 148));
         break;
 
@@ -868,9 +1155,9 @@ void updateHappyBirthday()
             return;
         }
 
-        C_HAPPY.SetRainbow(4);
-        C_BIRTH.SetRainbow(4);
-        C_DAY.SetRainbow(4);
+        C_HAPPY.HueCycle(4);
+        C_BIRTH.HueCycle(4);
+        C_DAY.HueCycle(4);
         C_ALICE.SetSingleColor(WC_Strip.Color(248, 24, 148));
         break;
 
@@ -891,9 +1178,9 @@ void updateHappyBirthday()
             return;
         }
 
-        C_HAPPY.SetRainbow(4);
-        C_BIRTH.SetRainbow(4);
-        C_DAY.SetRainbow(4);
+        C_HAPPY.HueCycle(4);
+        C_BIRTH.HueCycle(4);
+        C_DAY.HueCycle(4);
         C_ALICE.SetSingleColor(WC_Strip.Color(248, 24, 148));
         break;
 
@@ -918,9 +1205,6 @@ void updateHappyBirthday()
 
     if (SpecialPatternIndex >= 28)
     {
-        CurrentSpecialPattern = SP_NONE;
-        SpecialPatternIndex = 0;
-
-        forceTimeUpdate();
+        clearSpecialPattern();
     }
 }
