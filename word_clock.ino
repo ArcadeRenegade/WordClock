@@ -8,7 +8,7 @@
 #define LED_BRIGHTNESS 128
 #define BUTTON_PIN 8
 #define BDAY_MONTH 4
-#define BDAY_DAY 21
+#define BDAY_DAY 26
 
 // CONTROLLERS
 
@@ -304,17 +304,17 @@ public:
     }
 
     // Initialize for a ColorWipe
-    void ColorWipe(uint8_t interval = 10, uint32_t color = 0, PatternDirection dir = FORWARD, uint8_t loops = 0)
+    void ColorWipe(uint8_t interval = 10, uint32_t color1 = 0, uint32_t color2 = 0, PatternDirection dir = FORWARD, uint8_t loops = 0)
     {
         ActivePattern = COLOR_WIPE;
         Interval = interval;
-        TotalSteps = GetNumPixels();
+        TotalSteps = GetNumPixels() * 2;
         Index = 0;
         Direction = dir;
         Seed = 0;
 
-        Color1 = color == 0 ? GetRandomColor() : color;
-        Color2 = 0;
+        Color1 = color1 == 0 ? GetRandomColor() : color1;
+        Color2 = color2 == 0 ? GetRandomColor() : color2;
 
         LoopIndex = 0;
         MaxLoops = loops;
@@ -323,8 +323,20 @@ public:
     // Update the Color Wipe Pattern
     void ColorWipeUpdate()
     {
-        NeoPixel.setPixelColor(Index, Color1);
+        uint8_t half = TotalSteps / 2;
+
+        if (Index < half)
+        {
+            NeoPixel.setPixelColor(StartPixel + Index, Color1);
+        }
+        else
+        {
+            NeoPixel.setPixelColor(StartPixel + half - (Index % half), Color2);
+        }
+        
+        
         NeoPixel.show();
+        
         Increment();
     }
 
@@ -373,7 +385,7 @@ public:
     {
         ActivePattern = FADE;
         Interval = interval;
-        TotalSteps = 255;
+        TotalSteps = 256;
         Index = 0;
         Direction = dir;
         Seed = 0;
@@ -388,11 +400,23 @@ public:
     // Update the Fade Pattern
     void FadeUpdate()
     {
+        uint8_t halfway = TotalSteps / 2;
+        uint8_t i;
+        
+        if (Index < halfway)
+        {
+            i = Index;
+        }
+        else
+        {
+            i = halfway - (Index % halfway);
+        }
+        
         // Calculate linear interpolation between Color1 and Color2
         // Optimise order of operations to minimize truncation error
-        uint8_t red = ((Red(Color1) * (TotalSteps - Index)) + (Red(Color2) * Index)) / TotalSteps;
-        uint8_t green = ((Green(Color1) * (TotalSteps - Index)) + (Green(Color2) * Index)) / TotalSteps;
-        uint8_t blue = ((Blue(Color1) * (TotalSteps - Index)) + (Blue(Color2) * Index)) / TotalSteps;
+        uint8_t red = ((Red(Color1) * (TotalSteps - i)) + (Red(Color2) * i)) / halfway;
+        uint8_t green = ((Green(Color1) * (TotalSteps - i)) + (Green(Color2) * i)) / halfway;
+        uint8_t blue = ((Blue(Color1) * (TotalSteps - i)) + (Blue(Color2) * i)) / halfway;
 
         ColorSet(NeoPixel.Color(red, green, blue));
         Increment();
@@ -526,7 +550,7 @@ void setup()
     Serial.println("Starting...");
 
     pinMode(BUTTON_PIN, INPUT_PULLUP);
-
+    
     if (!rtc.begin())
     {
         Serial.println("Couldn't find RTC");
@@ -543,11 +567,13 @@ void setup()
 
     WC_Strip.begin();
     WC_Strip.setBrightness(LED_BRIGHTNESS);
+
+    setSpecialPattern(SP_DEMO);
 }
 
 void loop()
 {
-    checkButton();
+    //checkButton();
     checkTime();
     updateSpecialPattern();
     updateControllers();
@@ -561,25 +587,40 @@ void checkButton()
 
     if (digitalRead(BUTTON_PIN) != LOW)
     {
-        unsigned long duration = millis() - TimeSinceButtonPress;
-
-        if (ButtonPressed == true && duration > 200)
+        if (ButtonPressed == true)
         {
-            Serial.println("Button UP");
-
-            ButtonPressed = false;
-
-            if (duration < 1000)
-            {
-                setSpecialPattern(SP_DEMO);
-            }
+            Serial.println("BUTTON UP FUNC!");
+            onButtonUp();
         }
-
         return;
     }
 
     // BUTTON IS PRESSED
+    Serial.println("BUTTON DOWN FUNC!");
+    onButtonDown();
+}
 
+void onButtonUp()
+{
+    unsigned long duration = millis() - TimeSinceButtonPress;
+
+    Serial.println(duration, DEC);
+
+    if (duration > 200)
+    {
+        Serial.println("Button UP");
+
+        ButtonPressed = false;
+
+        if (duration < 1000)
+        {
+            setSpecialPattern(SP_DEMO);
+        }
+    }
+}
+
+void onButtonDown()
+{
     unsigned long now = millis();
 
     if (ButtonPressed == false)
@@ -967,7 +1008,7 @@ void setSpecialPattern(SpecialPattern pattern)
 
 void pickRandomDemo()
 {
-    uint8_t i = random(6);
+    uint8_t i = 3;
 
     switch (i)
     {
@@ -980,19 +1021,19 @@ void pickRandomDemo()
         return;
 
     case 2:
-        C_ALL.TheaterChase(100, 0, 0, FORWARD, 3);
+        C_ALL.TheaterChase(100, WC_Strip.Color(255, 0, 0), WC_Strip.Color(0, 0, 255), FORWARD, 1);
         return;
 
     case 3:
-        C_ALL.ColorWipe(8, 0, FORWARD, 10);
+        C_ALL.ColorWipe(8, WC_Strip.Color(255, 0, 0), WC_Strip.Color(0, 0, 255), FORWARD, 5);
         return;
 
     case 4:
-        C_ALL.Scanner(50, 0, 5);
+        C_ALL.Scanner(30, WC_Strip.Color(255, 0, 0), 3);
         return;
 
     case 5:
-        C_ALL.Fade(8, 0, 0, FORWARD, 5);
+        C_ALL.Fade(8, WC_Strip.Color(255, 0, 0), WC_Strip.Color(0, 0, 255), FORWARD, 5);
         return;
     }
 }
