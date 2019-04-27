@@ -22,7 +22,8 @@ enum ControllerPattern
     COLOR_WIPE,
     SCANNER,
     FADE,
-    BOX_ZOOM
+    BOX_ZOOM,
+    SNAKE
 };
 
 enum PatternDirection
@@ -96,27 +97,31 @@ public:
 
             case RAINBOW_CYCLE:
                 RainbowCycleUpdate();
-                break;
+                return;
 
             case THEATER_CHASE:
                 TheaterChaseUpdate();
-                break;
+                return;
 
             case COLOR_WIPE:
                 ColorWipeUpdate();
-                break;
+                return;
 
             case SCANNER:
                 ScannerUpdate();
-                break;
+                return;
 
             case FADE:
                 FadeUpdate();
-                break;
+                return;
 
             case BOX_ZOOM:
                 BoxZoomUpdate();
-                break;
+                return;
+
+            case SNAKE:
+                SnakeUpdate();
+                return;
 
             default:
                 return;
@@ -463,7 +468,7 @@ public:
         Increment();
     }
 
-    void BoxZoom(uint16_t interval = 500, uint32_t color1 = 0, uint32_t color2 = 0, PatternDirection dir = FORWARD, uint8_t loops = 0)
+    void BoxZoom(uint16_t interval = 500, uint32_t color1 = 0, uint32_t color2 = 0, uint8_t loops = 0)
     {
         if (GetNumPixels() < 120)
         {
@@ -474,7 +479,7 @@ public:
         Interval = interval;
         TotalSteps = 10;
         Index = 0;
-        Direction = dir;
+        Direction = FORWARD;
         Seed = 0;
 
         if (color1 == 0 && color2 == 0)
@@ -554,6 +559,53 @@ public:
 
         delete[] pixels;
 
+        NeoPixel.show();
+        Increment();
+    }
+
+    void Snake(uint16_t interval = 21, uint8_t loops = 0)
+    {
+        if (GetNumPixels() < 120)
+        {
+            return;
+        }
+
+        ActivePattern = SNAKE;
+        Interval = interval;
+        TotalSteps = 240;
+        Index = 0;
+        Direction = FORWARD;
+        Seed = 0;
+
+        Color1 = 0;
+        Color2 = 0;
+
+        LoopIndex = 0;
+        MaxLoops = loops;
+    }
+
+    void SnakeUpdate()
+    {
+        const uint8_t *pixels = new uint8_t[120]{11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 23, 24, 47, 48, 71, 72, 95, 96, 119, 118, 117, 116, 115, 114, 113, 112, 111, 110, 109, 108, 107, 84, 83, 60, 59, 36, 35, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 25, 46, 49, 70, 73, 94, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 85, 82, 61, 58, 37, 34, 33, 32, 31, 30, 29, 28, 27, 26, 45, 50, 69, 74, 93, 92, 91, 90, 89, 88, 87, 86, 81, 62, 57, 38, 39, 40, 41, 42, 43, 44, 51, 68, 75, 76, 77, 78, 79, 80, 63, 56, 55, 54, 53, 52, 67, 66, 65, 64};
+
+        uint8_t i;
+        uint32_t color;
+
+        if (Index >= 120)
+        {
+            i = 120 - (Index % 120);
+            color = NeoPixel.Color(0, 0, 0);
+        }
+        else
+        {
+            i = Index;
+            color = NeoPixel.ColorHSV(Index * 65535 / 120);
+        }
+
+        NeoPixel.setPixelColor(pixels[i], color);
+
+        delete[] pixels;
+        
         NeoPixel.show();
         Increment();
     }
@@ -1184,7 +1236,11 @@ void pickRandomDemo()
             return;
 
         case 5:
-            C_ALL.BoxZoom(500, 0, 0, FORWARD, 3);
+            C_ALL.BoxZoom(500, 0, 0, 3);
+            return;
+
+        case 6:
+            C_ALL.Snake(21, 4);
             return;
     }
 }
