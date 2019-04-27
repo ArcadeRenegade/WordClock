@@ -1,0 +1,6 @@
+{
+    "terminal.integrated.shell.windows": "C:\\WINDOWS\\System32\\cmd.exe",
+    "git.autofetch": true,
+    "editor.detectIndentation": false,
+    "editor.formatOnType": true
+}
