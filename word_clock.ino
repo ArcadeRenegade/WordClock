@@ -598,13 +598,13 @@ void onButtonUp()
 {
     unsigned long duration = millis() - ButtonPressTime;
 
-    if (duration > 200)
+    if (duration > 50)
     {
         Serial.println("Button UP");
 
         ButtonPressed = false;
 
-        if (duration < 1000)
+        if (duration < 2000)
         {
             setSpecialPattern(SP_DEMO);
         }
@@ -628,8 +628,8 @@ void onButtonDown()
 
     unsigned long duration = now - ButtonPressTime;
 
-    // BUTTON PRESSED FOR AT LEAST 3 SECONDS
-    if (duration < 3000)
+    // BUTTON PRESSED FOR AT LEAST 2 SECONDS
+    if (duration < 2000)
     {
         return;
     }
@@ -747,6 +747,9 @@ void updateTime(uint8_t currentHr, uint8_t currentMin)
     LastMin = currentMin;
 
     uint8_t currentMinInterval = currentMin / 5;
+
+    // CLEAR SPECIAL PATTERN
+    clearSpecialPattern(false);
 
     // CLEAR ALL CONTROLLERS
     clearControllers();
@@ -990,6 +993,7 @@ void clearControllers()
 void setSpecialPattern(SpecialPattern pattern)
 {
     clearControllers();
+    C_ALL.Clear();
 
     CurrentSpecialPattern = pattern;
     SpecialPatternLastUpdate = millis();
@@ -1018,19 +1022,19 @@ void pickRandomDemo()
         return;
 
     case 2:
-        C_ALL.TheaterChase(100, WC_Strip.Color(255, 0, 0), WC_Strip.Color(0, 0, 255), FORWARD, 1);
+        C_ALL.TheaterChase(100, C_ALL.GetRandomColor(), C_ALL.GetRandomColor(), FORWARD, 1);
         return;
 
     case 3:
-        C_ALL.ColorWipe(8, WC_Strip.Color(255, 0, 0), WC_Strip.Color(0, 0, 255), FORWARD, 5);
+        C_ALL.ColorWipe(8, C_ALL.GetRandomColor(), C_ALL.GetRandomColor(), FORWARD, 5);
         return;
 
     case 4:
-        C_ALL.Scanner(30, WC_Strip.Color(255, 0, 0), 3);
+        C_ALL.Scanner(30, C_ALL.GetRandomColor(), 3);
         return;
 
     case 5:
-        C_ALL.Fade(8, WC_Strip.Color(255, 0, 0), WC_Strip.Color(0, 0, 255), FORWARD, 5);
+        C_ALL.Fade(8, C_ALL.GetRandomColor(), C_ALL.GetRandomColor(), FORWARD, 5);
         return;
     }
 }
@@ -1053,19 +1057,27 @@ void updateSpecialPattern()
     }
 }
 
-void clearSpecialPattern()
+void clearSpecialPattern(bool setTime)
 {
+    if (CurrentSpecialPattern == SP_NONE)
+    {
+        return;
+    }
+    
     CurrentSpecialPattern = SP_NONE;
     SpecialPatternIndex = 0;
 
     C_ALL.Clear();
 
-    forceTimeUpdate();
+    if (setTime)
+    {
+        forceTimeUpdate();
+    }
 }
 
 void onPatternComplete()
 {
-    clearSpecialPattern();
+    clearSpecialPattern(true);
 }
 
 void updateHappyBirthday()
@@ -1239,10 +1251,8 @@ void updateHappyBirthday()
     SpecialPatternIndex++;
     SpecialPatternLastUpdate = now;
 
-    Serial.println(SpecialPatternIndex, DEC);
-
     if (SpecialPatternIndex >= 28)
     {
-        clearSpecialPattern();
+        clearSpecialPattern(true);
     }
 }
