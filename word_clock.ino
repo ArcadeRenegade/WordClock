@@ -36,13 +36,13 @@ public:
     ControllerPattern ActivePattern = NONE; // which pattern is running
     PatternDirection Direction = FORWARD;   // direction to run the pattern
 
-    unsigned long Interval;   // milliseconds between updates
+    uint16_t Interval;        // milliseconds between updates
     unsigned long LastUpdate; // last update of position
 
     uint32_t Color1, Color2; // What colors are in use
     uint16_t TotalSteps;     // total number of steps in the pattern
     uint16_t Index;          // current step within the pattern
-    uint16_t Seed;
+    uint8_t Seed;
 
     uint8_t MaxLoops;
     uint8_t LoopIndex;
@@ -333,10 +333,9 @@ public:
         {
             NeoPixel.setPixelColor(StartPixel + half - (Index % half), Color2);
         }
-        
-        
+
         NeoPixel.show();
-        
+
         Increment();
     }
 
@@ -402,7 +401,7 @@ public:
     {
         uint8_t halfway = TotalSteps / 2;
         uint8_t i;
-        
+
         if (Index < halfway)
         {
             i = Index;
@@ -411,7 +410,7 @@ public:
         {
             i = halfway - (Index % halfway);
         }
-        
+
         // Calculate linear interpolation between Color1 and Color2
         // Optimise order of operations to minimize truncation error
         uint8_t red = ((Red(Color1) * (TotalSteps - i)) + (Red(Color2) * i)) / halfway;
@@ -485,8 +484,8 @@ public:
 RTC_DS3231 rtc;
 
 bool ButtonPressed = false;
-unsigned long TimeSinceButtonPress = 0;
-unsigned long ButtonPressLastUpdate = 0;
+unsigned long ButtonPressTime = 0;
+uint8_t ButtonTick = 0;
 
 unsigned long LastTimeCheck = 32768;
 uint8_t LastHr = 255;
@@ -550,7 +549,7 @@ void setup()
     Serial.println("Starting...");
 
     pinMode(BUTTON_PIN, INPUT_PULLUP);
-    
+
     if (!rtc.begin())
     {
         Serial.println("Couldn't find RTC");
@@ -567,13 +566,11 @@ void setup()
 
     WC_Strip.begin();
     WC_Strip.setBrightness(LED_BRIGHTNESS);
-
-    setSpecialPattern(SP_DEMO);
 }
 
 void loop()
 {
-    //checkButton();
+    checkButton();
     checkTime();
     updateSpecialPattern();
     updateControllers();
@@ -584,27 +581,22 @@ void loop()
 void checkButton()
 {
     // BUTTON IS NOT PRESSED
-
     if (digitalRead(BUTTON_PIN) != LOW)
     {
         if (ButtonPressed == true)
         {
-            Serial.println("BUTTON UP FUNC!");
             onButtonUp();
         }
         return;
     }
 
     // BUTTON IS PRESSED
-    Serial.println("BUTTON DOWN FUNC!");
     onButtonDown();
 }
 
 void onButtonUp()
 {
-    unsigned long duration = millis() - TimeSinceButtonPress;
-
-    Serial.println(duration, DEC);
+    unsigned long duration = millis() - ButtonPressTime;
 
     if (duration > 200)
     {
@@ -628,24 +620,29 @@ void onButtonDown()
         Serial.println("Button DOWN");
 
         ButtonPressed = true;
-        TimeSinceButtonPress = now;
-    }
+        ButtonTick = 0;
+        ButtonPressTime = now;
 
-    if ((now - TimeSinceButtonPress) < 3000)
-    {
         return;
     }
+
+    unsigned long duration = now - ButtonPressTime;
 
     // BUTTON PRESSED FOR AT LEAST 3 SECONDS
-
-    if ((now - ButtonPressLastUpdate) < 1000)
+    if (duration < 3000)
     {
         return;
     }
 
-    ButtonPressLastUpdate = now;
-
     // 1 SECOND UPDATE INTERVAL
+    uint8_t tick = (duration / 1000) + 1;
+    
+    if (tick == ButtonTick)
+    {
+        return;
+    }
+
+    ButtonTick = tick;
 
     TimeHrOffset++;
 
@@ -1008,7 +1005,7 @@ void setSpecialPattern(SpecialPattern pattern)
 
 void pickRandomDemo()
 {
-    uint8_t i = 3;
+    uint8_t i = random(6);
 
     switch (i)
     {
@@ -1057,7 +1054,7 @@ void updateSpecialPattern()
 }
 
 void clearSpecialPattern()
-{    
+{
     CurrentSpecialPattern = SP_NONE;
     SpecialPatternIndex = 0;
 
