@@ -549,7 +549,6 @@ public:
 
         for (uint8_t i = 0; i < plength; i++)
         {
-            Serial.println(i, DEC);
             NeoPixel.setPixelColor(pixels[i], color);
         }
 
