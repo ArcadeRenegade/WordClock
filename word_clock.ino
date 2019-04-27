@@ -24,10 +24,17 @@ enum ControllerPattern
 	FADE,
     BOX_ZOOM
 };
+
 enum PatternDirection
 {
 	FORWARD,
 	REVERSE
+};
+
+struct ColorCombo
+{
+  uint32_t Color1;
+  uint32_t Color2;
 };
 
 class Controller
@@ -219,7 +226,7 @@ public:
 		ColorSet(color);
 	}
 
-	void HueCycle(uint8_t interval = 40, PatternDirection dir = FORWARD, uint8_t loops = 0)
+	void HueCycle(uint16_t interval = 40, PatternDirection dir = FORWARD, uint8_t loops = 0)
 	{
 		ActivePattern = HUE_CYCLE;
 		Interval = interval;
@@ -242,7 +249,7 @@ public:
 	}
 
 	// Initialize for a RainbowCycle
-	void RainbowCycle(uint8_t interval = 10, PatternDirection dir = FORWARD, uint8_t loops = 0)
+	void RainbowCycle(uint16_t interval = 10, PatternDirection dir = FORWARD, uint8_t loops = 0)
 	{
 		ActivePattern = RAINBOW_CYCLE;
 		Interval = interval;
@@ -273,7 +280,7 @@ public:
 	}
 
 	// Initialize for a Theater Chase
-	void TheaterChase(uint8_t interval = 10, uint32_t color1 = 0, uint32_t color2 = 0, PatternDirection dir = FORWARD, uint8_t loops = 0)
+	void TheaterChase(uint16_t interval = 10, uint32_t color1 = 0, uint32_t color2 = 0, PatternDirection dir = FORWARD, uint8_t loops = 0)
 	{
 		ActivePattern = THEATER_CHASE;
 		Interval = interval;
@@ -282,8 +289,18 @@ public:
 		Direction = dir;
 		Seed = 0;
 
-		Color1 = color1 == 0 ? GetRandomColor() : color1;
-		Color2 = color2 == 0 ? GetRandomColor() : color2;
+    if (color1 == 0 && color2 == 0)
+    {
+      ColorCombo combo = GetRandomColors();
+
+      Color1 = combo.Color1;
+      Color2 = combo.Color2;
+    }
+    else
+    {
+      Color1 = color1;
+      Color2 = color2;
+    }
 
 		LoopIndex = 0;
 		MaxLoops = loops;
@@ -309,7 +326,7 @@ public:
 	}
 
 	// Initialize for a ColorWipe
-	void ColorWipe(uint8_t interval = 10, uint32_t color1 = 0, uint32_t color2 = 0, PatternDirection dir = FORWARD, uint8_t loops = 0)
+	void ColorWipe(uint16_t interval = 10, uint32_t color1 = 0, uint32_t color2 = 0, PatternDirection dir = FORWARD, uint8_t loops = 0)
 	{
 		ActivePattern = COLOR_WIPE;
 		Interval = interval;
@@ -318,8 +335,18 @@ public:
 		Direction = dir;
 		Seed = 0;
 
-		Color1 = color1 == 0 ? GetRandomColor() : color1;
-		Color2 = color2 == 0 ? GetRandomColor() : color2;
+    if (color1 == 0 && color2 == 0)
+    {
+      ColorCombo combo = GetRandomColors();
+
+      Color1 = combo.Color1;
+      Color2 = combo.Color2;
+    }
+    else
+    {
+      Color1 = color1;
+      Color2 = color2;
+    }
 
 		LoopIndex = 0;
 		MaxLoops = loops;
@@ -345,7 +372,7 @@ public:
 	}
 
 	// Initialize for a SCANNNER
-	void Scanner(uint8_t interval, uint32_t color = 0, uint8_t loops = 0)
+	void Scanner(uint16_t interval, uint32_t color = 0, uint8_t loops = 0)
 	{
 		ActivePattern = SCANNER;
 		Interval = interval;
@@ -385,7 +412,7 @@ public:
 	}
 
 	// Initialize for a Fade
-	void Fade(uint8_t interval = 10, uint32_t color1 = 0, uint32_t color2 = 0, PatternDirection dir = FORWARD, uint8_t loops = 0)
+	void Fade(uint16_t interval = 10, uint32_t color1 = 0, uint32_t color2 = 0, PatternDirection dir = FORWARD, uint8_t loops = 0)
 	{
 		ActivePattern = FADE;
 		Interval = interval;
@@ -394,8 +421,18 @@ public:
 		Direction = dir;
 		Seed = 0;
 
-		Color1 = color1 == 0 ? GetRandomColor() : color1;
-		Color2 = color2 == 0 ? GetRandomColor() : color2;
+    if (color1 == 0 && color2 == 0)
+    {
+      ColorCombo combo = GetRandomColors();
+
+      Color1 = combo.Color1;
+      Color2 = combo.Color2;
+    }
+    else
+    {
+      Color1 = color1;
+      Color2 = color2;
+    }
 
 		LoopIndex = 0;
 		MaxLoops = loops;
@@ -426,22 +463,32 @@ public:
 		Increment();
 	}
 
-	void BoxZoom(uint8_t interval = 500, uint32_t color1 = 0, uint32_t color2 = 0, PatternDirection dir = FORWARD, uint8_t loops = 0)
+	void BoxZoom(uint16_t interval = 500, uint32_t color1 = 0, uint32_t color2 = 0, PatternDirection dir = FORWARD, uint8_t loops = 0)
 	{
-        if (GetNumPixels() < 120)
+    if (GetNumPixels() < 120)
         {
 			return;
 		}
 
 		ActivePattern = BOX_ZOOM;
 		Interval = interval;
-		TotalSteps = 12;
+		TotalSteps = 10;
 		Index = 0;
 		Direction = dir;
 		Seed = 0;
 
-		Color1 = color1 == 0 ? GetRandomColor() : color1;
-		Color2 = color2 == 0 ? GetRandomColor() : color2;
+    if (color1 == 0 && color2 == 0)
+    {
+      ColorCombo combo = GetRandomColors();
+
+      Color1 = combo.Color1;
+      Color2 = combo.Color2;
+    }
+    else
+    {
+      Color1 = color1;
+      Color2 = color2;
+    }
 
 		LoopIndex = 0;
 		MaxLoops = loops;
@@ -449,44 +496,45 @@ public:
 
 	void BoxZoomUpdate()
 	{
-		uint8_t pixels[];
+		const uint8_t* pixels;
+    uint8_t plength;
 
 		switch (Index)
 		{
 			case 0:
-            case 11:
-				pixels = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 35, 36, 59, 60, 83, 84, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 96, 95, 72, 71, 48, 47, 24, 23 ];
+            case 9:
+				pixels = new uint8_t[40] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 35, 36, 59, 60, 83, 84, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 96, 95, 72, 71, 48, 47, 24, 23 };
+       plength = 40;
 				break;
 
 			case 1:
-            case 10:
-				pixels = [ 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 25, 46, 49, 70, 73, 94, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 85, 82, 61, 58, 37, 34 ];
+            case 8:
+				pixels = new uint8_t[32]{ 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 25, 46, 49, 70, 73, 94, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 85, 82, 61, 58, 37, 34 };
+        plength = 32;
 				break;
 
 			case 2:
-            case 9:
-				pixels = [ 26, 27, 28, 29, 30, 31, 32, 33, 38, 57, 62, 81, 86, 87, 88, 89, 90, 91, 92, 93, 74, 69, 50, 45 ];
+            case 7:
+				pixels = new uint8_t[24] { 26, 27, 28, 29, 30, 31, 32, 33, 38, 57, 62, 81, 86, 87, 88, 89, 90, 91, 92, 93, 74, 69, 50, 45 };
+        plength = 24;
 				break;
 
 			case 3:
-            case 8:
-				pixels = [ 39, 40, 41, 42, 43, 44, 51, 68, 75, 76, 77, 78, 79, 80, 63, 56 ];
+            case 6:
+				pixels = new uint8_t[16] { 39, 40, 41, 42, 43, 44, 51, 68, 75, 76, 77, 78, 79, 80, 63, 56 };
+        plength = 16;
 				break;
 
 			case 4:
-            case 7:
-				pixels = [ 52, 53, 54, 55, 64, 65, 66, 67 ];
-				break;
-
             case 5:
-            case 6:
-				pixels = [ 53, 54, 65, 66 ];
+				pixels = new uint8_t[8] { 52, 53, 54, 55, 64, 65, 66, 67 };
+       plength = 8;
 				break;
 		}
 
 		uint32_t color;
 
-        if (Index >= 6)
+        if (Index >= 5)
         {
 			color = NeoPixel.Color(0, 0, 0);
 		}
@@ -499,10 +547,13 @@ public:
 			color = Color2;
 		}        
 
-		for (uint8_t i = 0; i <= sizeof(pixels); i++)
+		for (uint8_t i = 0; i < plength; i++)
 		{            
-			NeoPixel.setPixelColor(i, color);
+    Serial.println(i, DEC);
+			NeoPixel.setPixelColor(pixels[i], color);
 		}
+
+   delete[] pixels;
 
 		NeoPixel.show();
         Increment();
@@ -559,6 +610,19 @@ public:
 
 		return NeoPixel.ColorHSV(hue);
 	}
+
+ ColorCombo GetRandomColors()
+ {
+    uint16_t hue1 = random(65536);
+    uint16_t hue2 = (hue1 + 32768) % 65536;
+
+    ColorCombo combo;
+
+    combo.Color1 = NeoPixel.ColorHSV(hue1);
+    combo.Color2 = NeoPixel.ColorHSV(hue2);
+
+    return combo;
+ }
 
 	uint8_t GetNumPixels()
 	{
@@ -1096,7 +1160,7 @@ void setSpecialPattern(SpecialPattern pattern)
 
 void pickRandomDemo()
 {
-	uint8_t i = 5; //random(6);
+	uint8_t i = random(6);
 
 	switch (i)
 	{
@@ -1109,19 +1173,19 @@ void pickRandomDemo()
 			return;
 
 		case 2:
-			C_ALL.TheaterChase(100, C_ALL.GetRandomColor(), C_ALL.GetRandomColor(), FORWARD, 1);
+			C_ALL.TheaterChase(100, 0, 0, FORWARD, 1);
 			return;
 
 		case 3:
-			C_ALL.ColorWipe(8, C_ALL.GetRandomColor(), C_ALL.GetRandomColor(), FORWARD, 5);
+			C_ALL.ColorWipe(8, 0, 0, FORWARD, 5);
 			return;
 
 		case 4:
-			C_ALL.Scanner(30, C_ALL.GetRandomColor(), 3);
+			C_ALL.Scanner(30, 0, 3);
 			return;
 
 		case 5:
-			C_ALL.BoxZoom(500, C_ALL.GetRandomColor(), C_ALL.GetRandomColor(), FORWARD, 2);
+			C_ALL.BoxZoom(500, 0, 0, FORWARD, 3);
 			return;
 	}
 }
