@@ -8,7 +8,7 @@
 #define LED_BRIGHTNESS 128
 #define BUTTON_PIN 8
 #define BDAY_MONTH 4
-#define BDAY_DAY 26
+#define BDAY_DAY 27
 
 // CONTROLLERS
 
@@ -21,7 +21,6 @@ enum ControllerPattern
     THEATER_CHASE,
     COLOR_WIPE,
     SCANNER,
-    FADE,
     BOX_ZOOM,
     SNAKE
 };
@@ -41,17 +40,19 @@ struct ColorCombo
 class Controller
 {
 public:
+    static uint16_t GlobalTick;
+    static unsigned long LastUpdate; // last update of position
+
     // Member Variables:
     ControllerPattern ActivePattern = NONE; // which pattern is running
     PatternDirection Direction = FORWARD;   // direction to run the pattern
 
-    uint16_t Interval;        // milliseconds between updates
-    unsigned long LastUpdate; // last update of position
+    uint16_t Interval; // milliseconds between updates
+    uint16_t TickDuration;
 
     uint32_t Color1, Color2; // What colors are in use
     uint16_t TotalSteps;     // total number of steps in the pattern
     uint16_t Index;          // current step within the pattern
-    uint8_t Seed;
 
     uint8_t MaxLoops;
     uint8_t LoopIndex;
@@ -61,11 +62,19 @@ public:
     const uint8_t StartPixel;
     const uint8_t EndPixel;
 
-    void (*OnComplete)(); // Callback on completion of pattern
+    void (*OnComplete)(ControllerPattern completedPattern); // Callback on completion of pattern
 
-    Controller(Adafruit_NeoPixel &neoPixel, const uint8_t startPixel, const uint8_t endPixel, void (*callback)()) : NeoPixel(neoPixel), StartPixel(startPixel), EndPixel(endPixel)
+    Controller(Adafruit_NeoPixel &neoPixel, const uint8_t startPixel, const uint8_t endPixel, void (*callback)(ControllerPattern completedPattern)) : NeoPixel(neoPixel), StartPixel(startPixel), EndPixel(endPixel)
     {
         OnComplete = callback;
+    }
+
+    static void UpdateTick()
+    {
+        unsigned long now = millis();
+
+        Controller::GlobalTick = now - Controller::LastUpdate;
+        Controller::LastUpdate = now;
     }
 
     void Update()
@@ -80,14 +89,12 @@ public:
                 break;
         }
 
-        unsigned long now = millis();
+        TickDuration += Controller::GlobalTick;
 
-        if ((now - LastUpdate) < Interval)
+        if (TickDuration < Interval)
         {
             return;
         }
-
-        LastUpdate = now;
 
         switch (ActivePattern)
         {
@@ -111,10 +118,6 @@ public:
                 ScannerUpdate();
                 return;
 
-            case FADE:
-                FadeUpdate();
-                return;
-
             case BOX_ZOOM:
                 BoxZoomUpdate();
                 return;
@@ -130,6 +133,8 @@ public:
 
     void Increment()
     {
+        TickDuration = 0;
+
         if (Direction == FORWARD)
         {
             Index++;
@@ -168,11 +173,13 @@ public:
             return;
         }
 
+        ControllerPattern completedPattern = ActivePattern;
+
         Clear();
 
         if (OnComplete != NULL)
         {
-            OnComplete();
+            OnComplete(completedPattern);
         }
     }
 
@@ -202,7 +209,7 @@ public:
         TotalSteps = 0;
         Index = 0;
         Direction = FORWARD;
-        Seed = 0;
+        TickDuration = 0;
 
         Color1 = 0;
         Color2 = 0;
@@ -220,7 +227,6 @@ public:
         TotalSteps = 0;
         Index = 0;
         Direction = FORWARD;
-        Seed = 0;
 
         Color1 = color;
         Color2 = 0;
@@ -238,9 +244,8 @@ public:
         TotalSteps = 256;
         Index = 0;
         Direction = dir;
-        Seed = random(256);
 
-        Color1 = 0;
+        Color1 = random(256);
         Color2 = 0;
 
         LoopIndex = 0;
@@ -249,7 +254,7 @@ public:
 
     void HueCycleUpdate()
     {
-        ColorSet(Wheel((Seed + Index) % 256));
+        ColorSet(Wheel((Color1 + Index) % 256));
         Increment();
     }
 
@@ -261,7 +266,6 @@ public:
         TotalSteps = 255;
         Index = 0;
         Direction = dir;
-        Seed = 0;
 
         Color1 = 0;
         Color2 = 0;
@@ -292,7 +296,6 @@ public:
         TotalSteps = GetNumPixels();
         Index = 0;
         Direction = dir;
-        Seed = 0;
 
         if (color1 == 0 && color2 == 0)
         {
@@ -338,7 +341,6 @@ public:
         TotalSteps = GetNumPixels() * 2;
         Index = 0;
         Direction = dir;
-        Seed = 0;
 
         if (color1 == 0 && color2 == 0)
         {
@@ -384,7 +386,6 @@ public:
         TotalSteps = (GetNumPixels() - 1) * 2;
         Index = 0;
         Direction = FORWARD;
-        Seed = 0;
 
         Color1 = color == 0 ? GetRandomColor() : color;
         Color2 = 0;
@@ -416,58 +417,6 @@ public:
         Increment();
     }
 
-    // Initialize for a Fade
-    void Fade(uint16_t interval = 10, uint32_t color1 = 0, uint32_t color2 = 0, PatternDirection dir = FORWARD, uint8_t loops = 0)
-    {
-        ActivePattern = FADE;
-        Interval = interval;
-        TotalSteps = 256;
-        Index = 0;
-        Direction = dir;
-        Seed = 0;
-
-        if (color1 == 0 && color2 == 0)
-        {
-            ColorCombo combo = GetRandomColors();
-
-            Color1 = combo.Color1;
-            Color2 = combo.Color2;
-        }
-        else
-        {
-            Color1 = color1;
-            Color2 = color2;
-        }
-
-        LoopIndex = 0;
-        MaxLoops = loops;
-    }
-
-    // Update the Fade Pattern
-    void FadeUpdate()
-    {
-        uint8_t halfway = TotalSteps / 2;
-        uint8_t i;
-
-        if (Index < halfway)
-        {
-            i = Index;
-        }
-        else
-        {
-            i = halfway - (Index % halfway);
-        }
-
-        // Calculate linear interpolation between Color1 and Color2
-        // Optimise order of operations to minimize truncation error
-        uint8_t red = ((Red(Color1) * (TotalSteps - i)) + (Red(Color2) * i)) / halfway;
-        uint8_t green = ((Green(Color1) * (TotalSteps - i)) + (Green(Color2) * i)) / halfway;
-        uint8_t blue = ((Blue(Color1) * (TotalSteps - i)) + (Blue(Color2) * i)) / halfway;
-
-        ColorSet(NeoPixel.Color(red, green, blue));
-        Increment();
-    }
-
     void BoxZoom(uint16_t interval = 500, uint32_t color1 = 0, uint32_t color2 = 0, uint8_t loops = 0)
     {
         if (GetNumPixels() < 120)
@@ -480,7 +429,6 @@ public:
         TotalSteps = 10;
         Index = 0;
         Direction = FORWARD;
-        Seed = 0;
 
         if (color1 == 0 && color2 == 0)
         {
@@ -575,7 +523,6 @@ public:
         TotalSteps = 240;
         Index = 0;
         Direction = FORWARD;
-        Seed = 0;
 
         Color1 = 0;
         Color2 = 0;
@@ -586,26 +533,24 @@ public:
 
     void SnakeUpdate()
     {
-        const uint8_t *pixels = new uint8_t[120]{11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 23, 24, 47, 48, 71, 72, 95, 96, 119, 118, 117, 116, 115, 114, 113, 112, 111, 110, 109, 108, 107, 84, 83, 60, 59, 36, 35, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 25, 46, 49, 70, 73, 94, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 85, 82, 61, 58, 37, 34, 33, 32, 31, 30, 29, 28, 27, 26, 45, 50, 69, 74, 93, 92, 91, 90, 89, 88, 87, 86, 81, 62, 57, 38, 39, 40, 41, 42, 43, 44, 51, 68, 75, 76, 77, 78, 79, 80, 63, 56, 55, 54, 53, 52, 67, 66, 65, 64};
+        static const uint8_t pixels[120] = {11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 23, 24, 47, 48, 71, 72, 95, 96, 119, 118, 117, 116, 115, 114, 113, 112, 111, 110, 109, 108, 107, 84, 83, 60, 59, 36, 35, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 25, 46, 49, 70, 73, 94, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 85, 82, 61, 58, 37, 34, 33, 32, 31, 30, 29, 28, 27, 26, 45, 50, 69, 74, 93, 92, 91, 90, 89, 88, 87, 86, 81, 62, 57, 38, 39, 40, 41, 42, 43, 44, 51, 68, 75, 76, 77, 78, 79, 80, 63, 56, 55, 54, 53, 52, 67, 66, 65, 64};
 
         uint8_t i;
         uint32_t color;
 
         if (Index >= 120)
         {
-            i = 120 - (Index % 120);
+            i = 120 - (Index % 120) - 1;
             color = NeoPixel.Color(0, 0, 0);
         }
         else
         {
             i = Index;
-            color = NeoPixel.ColorHSV(Index * 65535 / 120);
+            color = NeoPixel.ColorHSV(Index * 65535 / 119);
         }
 
         NeoPixel.setPixelColor(pixels[i], color);
 
-        delete[] pixels;
-        
         NeoPixel.show();
         Increment();
     }
@@ -681,6 +626,117 @@ public:
     }
 };
 
+class WordController
+{
+public:
+    ControllerPattern ActivePattern = NONE;
+
+    uint16_t Interval;
+    uint16_t TickDuration;
+
+    uint8_t Index;
+    uint8_t Seed;
+
+    Adafruit_NeoPixel &NeoPixel;
+
+    const uint8_t StartPixel;
+    const uint8_t EndPixel;
+    
+    WordController(Adafruit_NeoPixel &neoPixel, const uint8_t startPixel, const uint8_t endPixel) : NeoPixel(neoPixel), StartPixel(startPixel), EndPixel(endPixel)
+    {
+    }
+
+    void Update()
+    {
+        switch (ActivePattern)
+        {
+            case NONE:
+            case SINGLE_COLOR:
+                return;
+
+            default:
+                break;
+        }
+
+        TickDuration += Controller::GlobalTick;
+
+        if (TickDuration < Interval)
+        {
+            return;
+        }
+
+        ColorSet(Wheel((Seed + Index) % 256));
+        Increment();
+    }
+
+    void Increment()
+    {
+        TickDuration = 0;
+
+        Index++;
+
+        if (Index >= 256)
+        {
+            Index = 0;
+        }
+    }
+
+    void Clear()
+    {
+        if (ActivePattern == NONE)
+        {
+            return;
+        }
+
+        ActivePattern = NONE;
+        Interval = 0;
+        Index = 0;
+        TickDuration = 0;
+
+        ColorSet(NeoPixel.Color(0, 0, 0));
+    }
+
+    void Start(uint16_t interval = 40)
+    {
+        ActivePattern = HUE_CYCLE;
+        Interval = interval;
+        Index = 0;
+        Seed = random(256);
+    }
+
+    void SetSingleColor(uint32_t color)
+    {
+        ActivePattern = SINGLE_COLOR;
+        Index = 0;
+        Seed = 0;
+
+        ColorSet(color);
+    }
+
+    // Set all pixels to a color (synchronously)
+    void ColorSet(uint32_t color)
+    {
+        for (uint8_t i = StartPixel; i <= EndPixel; i++)
+        {
+            NeoPixel.setPixelColor(i, color);
+        }
+
+        NeoPixel.show();
+    }
+
+    // Input a value 0 to 255 to get a color value.
+    // The colours are a transition r - g - b - back to r.
+    uint32_t Wheel(uint8_t pos)
+    {
+        uint16_t hue = pos * 65535 / 255;
+
+        return NeoPixel.ColorHSV(hue);
+    }
+};
+
+unsigned long Controller::LastUpdate;
+uint16_t Controller::GlobalTick;
+
 // INIT
 
 RTC_DS3231 rtc;
@@ -710,37 +766,37 @@ uint8_t SpecialPatternIndex = 0;
 // INIT NEOPIXEL
 Adafruit_NeoPixel WC_Strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-void onPatternComplete();
+void onPatternComplete(ControllerPattern completedPattern);
 
 Controller C_ALL(WC_Strip, 0, 119, &onPatternComplete);
 
-Controller C_TWENTY(WC_Strip, 0, 5, NULL);
-Controller C_IS(WC_Strip, 7, 8, NULL);
-Controller C_IT(WC_Strip, 10, 11, NULL);
-Controller C_QUARTER(WC_Strip, 12, 18, NULL);
-Controller C_HALF(WC_Strip, 20, 23, NULL);
-Controller C_HAPPY(WC_Strip, 24, 28, NULL);
-Controller C_TEN(WC_Strip, 29, 31, NULL);
-Controller C_FIVE(WC_Strip, 32, 35, NULL);
-Controller C_MINUTES(WC_Strip, 36, 42, NULL);
-Controller C_BIRTH(WC_Strip, 43, 47, NULL);
-Controller C_DAY(WC_Strip, 48, 50, NULL);
-Controller C_HR_ONE(WC_Strip, 51, 53, NULL);
-Controller C_TO(WC_Strip, 55, 56, NULL);
-Controller C_PAST(WC_Strip, 56, 59, NULL);
-Controller C_HR_TWO(WC_Strip, 60, 62, NULL);
-Controller C_HR_FIVE(WC_Strip, 63, 66, NULL);
-Controller C_ALICE(WC_Strip, 67, 71, NULL);
-Controller C_HR_TWELVE(WC_Strip, 72, 77, NULL);
-Controller C_HR_ELEVEN(WC_Strip, 78, 83, NULL);
-Controller C_HR_THREE(WC_Strip, 84, 88, NULL);
-Controller C_HR_FOUR(WC_Strip, 89, 92, NULL);
-Controller C_HR_SIX(WC_Strip, 93, 95, NULL);
-Controller C_HR_TEN(WC_Strip, 96, 98, NULL);
-Controller C_HR_NINE(WC_Strip, 99, 102, NULL);
-Controller C_HR_SEVEN(WC_Strip, 103, 107, NULL);
-Controller C_HR_EIGHT(WC_Strip, 108, 112, NULL);
-Controller C_OCLOCK(WC_Strip, 114, 119, NULL);
+WordController C_TWENTY(WC_Strip, 0, 5);
+WordController C_IS(WC_Strip, 7, 8);
+WordController C_IT(WC_Strip, 10, 11);
+WordController C_QUARTER(WC_Strip, 12, 18);
+WordController C_HALF(WC_Strip, 20, 23);
+WordController C_HAPPY(WC_Strip, 24, 28);
+WordController C_TEN(WC_Strip, 29, 31);
+WordController C_FIVE(WC_Strip, 32, 35);
+WordController C_MINUTES(WC_Strip, 36, 42);
+WordController C_BIRTH(WC_Strip, 43, 47);
+WordController C_DAY(WC_Strip, 48, 50);
+WordController C_HR_ONE(WC_Strip, 51, 53);
+WordController C_TO(WC_Strip, 55, 56);
+WordController C_PAST(WC_Strip, 56, 59);
+WordController C_HR_TWO(WC_Strip, 60, 62);
+WordController C_HR_FIVE(WC_Strip, 63, 66);
+WordController C_ALICE(WC_Strip, 67, 71);
+WordController C_HR_TWELVE(WC_Strip, 72, 77);
+WordController C_HR_ELEVEN(WC_Strip, 78, 83);
+WordController C_HR_THREE(WC_Strip, 84, 88);
+WordController C_HR_FOUR(WC_Strip, 89, 92);
+WordController C_HR_SIX(WC_Strip, 93, 95);
+WordController C_HR_TEN(WC_Strip, 96, 98);
+WordController C_HR_NINE(WC_Strip, 99, 102);
+WordController C_HR_SEVEN(WC_Strip, 103, 107);
+WordController C_HR_EIGHT(WC_Strip, 108, 112);
+WordController C_OCLOCK(WC_Strip, 114, 119);
 
 // BEGIN EXECUTION
 
@@ -808,7 +864,7 @@ void onButtonUp()
 
         if (duration < 2000)
         {
-            setSpecialPattern(SP_DEMO);
+            setSpecialPattern(SP_LIGHT_SHOW);
         }
     }
 }
@@ -915,6 +971,12 @@ void checkTime()
         return;
     }
 
+    if (currentHr != LastHr && LastHr != 255)
+    {
+        setSpecialPattern(SP_LIGHT_SHOW);
+        return;
+    }
+    
     uint8_t currentMonth = dt.month();
     uint8_t currentDay = dt.day();
 
@@ -957,90 +1019,90 @@ void updateTime(uint8_t currentHr, uint8_t currentMin)
     clearControllers();
 
     // IT IS
-    C_IT.HueCycle();
-    C_IS.HueCycle();
+    C_IT.Start();
+    C_IS.Start();
 
     switch (currentMinInterval)
     {
         // FIVE MINUTES PAST
         case 1:
-            C_FIVE.HueCycle();
-            C_MINUTES.HueCycle();
-            C_PAST.HueCycle();
+            C_FIVE.Start();
+            C_MINUTES.Start();
+            C_PAST.Start();
             break;
 
         // TEN MINUTES PAST
         case 2:
-            C_TEN.HueCycle();
-            C_MINUTES.HueCycle();
-            C_PAST.HueCycle();
+            C_TEN.Start();
+            C_MINUTES.Start();
+            C_PAST.Start();
             break;
 
         // QUARTER PAST
         case 3:
-            C_QUARTER.HueCycle();
-            C_PAST.HueCycle();
+            C_QUARTER.Start();
+            C_PAST.Start();
             break;
 
         // TWENTY MINUTES PAST
         case 4:
-            C_TWENTY.HueCycle();
-            C_MINUTES.HueCycle();
-            C_PAST.HueCycle();
+            C_TWENTY.Start();
+            C_MINUTES.Start();
+            C_PAST.Start();
             break;
 
         // TWENTY FIVE MINUTES PAST
         case 5:
-            C_TWENTY.HueCycle();
-            C_FIVE.HueCycle();
-            C_MINUTES.HueCycle();
-            C_PAST.HueCycle();
+            C_TWENTY.Start();
+            C_FIVE.Start();
+            C_MINUTES.Start();
+            C_PAST.Start();
             break;
 
         // HALF PAST
         case 6:
-            C_HALF.HueCycle();
-            C_PAST.HueCycle();
+            C_HALF.Start();
+            C_PAST.Start();
             break;
 
         // TWENTY FIVE MINUTES TO
         case 7:
             currentHr++;
-            C_TWENTY.HueCycle();
-            C_FIVE.HueCycle();
-            C_MINUTES.HueCycle();
-            C_TO.HueCycle();
+            C_TWENTY.Start();
+            C_FIVE.Start();
+            C_MINUTES.Start();
+            C_TO.Start();
             break;
 
         // TWENTY MINUTES TO
         case 8:
             currentHr++;
-            C_TWENTY.HueCycle();
-            C_MINUTES.HueCycle();
-            C_TO.HueCycle();
+            C_TWENTY.Start();
+            C_MINUTES.Start();
+            C_TO.Start();
             break;
 
         // QUARTER TO
         case 9:
             currentHr++;
-            C_QUARTER.HueCycle();
-            C_TO.HueCycle();
+            C_QUARTER.Start();
+            C_TO.Start();
             break;
 
         // TEN MINUTES TO
         case 10:
             currentHr++;
-            C_TEN.HueCycle();
-            C_MINUTES.HueCycle();
-            C_TO.HueCycle();
+            C_TEN.Start();
+            C_MINUTES.Start();
+            C_TO.Start();
             break;
 
         // FIVE MINUTES TO
         case 11:
             currentHr++;
-            C_FIVE.HueCycle();
-            C_MINUTES.HueCycle();
-            C_TO.HueCycle();
+            C_FIVE.Start();
+            C_MINUTES.Start();
+            C_TO.Start();
             break;
 
         // N\A
@@ -1053,77 +1115,77 @@ void updateTime(uint8_t currentHr, uint8_t currentMin)
         // ONE
         case 1:
         case 13:
-            C_HR_ONE.HueCycle();
+            C_HR_ONE.Start();
             break;
 
         // TWO
         case 2:
         case 14:
-            C_HR_TWO.HueCycle();
+            C_HR_TWO.Start();
             break;
 
         // THREE
         case 3:
         case 15:
-            C_HR_THREE.HueCycle();
+            C_HR_THREE.Start();
             break;
 
         // FOUR
         case 4:
         case 16:
-            C_HR_FOUR.HueCycle();
+            C_HR_FOUR.Start();
             break;
 
         // FIVE
         case 5:
         case 17:
-            C_HR_FIVE.HueCycle();
+            C_HR_FIVE.Start();
             break;
 
         // SIX
         case 6:
         case 18:
-            C_HR_SIX.HueCycle();
+            C_HR_SIX.Start();
             break;
 
         // SEVEN
         case 7:
         case 19:
-            C_HR_SEVEN.HueCycle();
+            C_HR_SEVEN.Start();
             break;
 
         // EIGHT
         case 8:
         case 20:
-            C_HR_EIGHT.HueCycle();
+            C_HR_EIGHT.Start();
             break;
 
         // NINE
         case 9:
         case 21:
-            C_HR_NINE.HueCycle();
+            C_HR_NINE.Start();
             break;
 
         // TEN
         case 10:
         case 22:
-            C_HR_TEN.HueCycle();
+            C_HR_TEN.Start();
             break;
 
         // ELEVEN
         case 11:
         case 23:
-            C_HR_ELEVEN.HueCycle();
+            C_HR_ELEVEN.Start();
             break;
 
         // TWELVE
         default:
-            C_HR_TWELVE.HueCycle();
+            C_HR_TWELVE.Start();
             break;
     }
 
     // OCLOCK
-    C_OCLOCK.HueCycle();
+    C_OCLOCK.Start();
 }
 
 // UPDATE CONTROLLERS
@@ -1157,6 +1219,8 @@ void updateControllers()
     C_HR_SEVEN.Update();
     C_OCLOCK.Update();
     C_HR_EIGHT.Update();
+
+    Controller::UpdateTick();
 }
 
 void clearControllers()
@@ -1206,12 +1270,16 @@ void setSpecialPattern(SpecialPattern pattern)
         case SP_DEMO:
             pickRandomDemo();
             return;
+
+        case SP_LIGHT_SHOW:
+            C_ALL.HueCycle(4, FORWARD, 10);
+            return;
     }
 }
 
 void pickRandomDemo()
 {
-    uint8_t i = random(6);
+    uint8_t i = random(7);
 
     switch (i)
     {
@@ -1281,9 +1349,48 @@ void clearSpecialPattern(bool setTime)
     }
 }
 
-void onPatternComplete()
+void onPatternComplete(ControllerPattern completedPattern)
 {
-    clearSpecialPattern(true);
+    if (CurrentSpecialPattern != SP_LIGHT_SHOW)
+    {
+        clearSpecialPattern(true);
+        return;
+    }
+
+    switch (completedPattern)
+    {
+        case HUE_CYCLE:
+            C_ALL.RainbowCycle(8, FORWARD, 5);
+            return;
+
+        case RAINBOW_CYCLE:
+            C_ALL.TheaterChase(100, 0, 0, FORWARD, 1);
+            return;
+
+        case THEATER_CHASE:
+            C_ALL.ColorWipe(8, 0, 0, FORWARD, 5);
+            return;
+
+        case COLOR_WIPE:
+            C_ALL.Scanner(30, 0, 3);
+            return;
+
+        case SCANNER:
+            C_ALL.BoxZoom(500, 0, 0, 3);
+            return;
+
+        case BOX_ZOOM:
+            C_ALL.Snake(21, 4);
+            return;
+        
+        case SNAKE:
+            clearSpecialPattern(true);
+            return;
+
+        default:
+            clearSpecialPattern(true);
+            return;
+    }
 }
 
 void updateHappyBirthday()
@@ -1301,7 +1408,7 @@ void updateHappyBirthday()
                 return;
             }
 
-            C_HAPPY.HueCycle(4);
+            C_HAPPY.Start(4);
             break;
 
         case 1:
@@ -1311,8 +1418,8 @@ void updateHappyBirthday()
                 return;
             }
 
-            C_BIRTH.HueCycle(4);
-            C_DAY.HueCycle(4);
+            C_BIRTH.Start(4);
+            C_DAY.Start(4);
             break;
 
         case 2:
@@ -1342,9 +1449,9 @@ void updateHappyBirthday()
                 return;
             }
 
-            C_HAPPY.HueCycle(4);
-            C_BIRTH.HueCycle(4);
-            C_DAY.HueCycle(4);
+            C_HAPPY.Start(4);
+            C_BIRTH.Start(4);
+            C_DAY.Start(4);
             C_ALICE.SetSingleColor(WC_Strip.Color(248, 24, 148));
             break;
 
@@ -1365,9 +1472,9 @@ void updateHappyBirthday()
                 return;
             }
 
-            C_HAPPY.HueCycle(4);
-            C_BIRTH.HueCycle(4);
-            C_DAY.HueCycle(4);
+            C_HAPPY.Start(4);
+            C_BIRTH.Start(4);
+            C_DAY.Start(4);
             C_ALICE.SetSingleColor(WC_Strip.Color(248, 24, 148));
             break;
 
@@ -1388,9 +1495,9 @@ void updateHappyBirthday()
                 return;
             }
 
-            C_HAPPY.HueCycle(4);
-            C_BIRTH.HueCycle(4);
-            C_DAY.HueCycle(4);
+            C_HAPPY.Start(4);
+            C_BIRTH.Start(4);
+            C_DAY.Start(4);
             C_ALICE.SetSingleColor(WC_Strip.Color(248, 24, 148));
             break;
 
@@ -1411,9 +1518,9 @@ void updateHappyBirthday()
                 return;
             }
 
-            C_HAPPY.HueCycle(4);
-            C_BIRTH.HueCycle(4);
-            C_DAY.HueCycle(4);
+            C_HAPPY.Start(4);
+            C_BIRTH.Start(4);
+            C_DAY.Start(4);
             C_ALICE.SetSingleColor(WC_Strip.Color(248, 24, 148));
             break;
 
@@ -1434,9 +1541,9 @@ void updateHappyBirthday()
                 return;
             }
 
-            C_HAPPY.HueCycle(4);
-            C_BIRTH.HueCycle(4);
-            C_DAY.HueCycle(4);
+            C_HAPPY.Start(4);
+            C_BIRTH.Start(4);
+            C_DAY.Start(4);
             C_ALICE.SetSingleColor(WC_Strip.Color(248, 24, 148));
             break;
 

@@ -7,18 +7,20 @@
                 "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\**",
                 "C:\\Program Files (x86)\\Arduino\\hardware\\tools\\avr\\include",
                 "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\Wire\\src",
-                "C:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\libraries\\",
-                "C:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\libraries\\Adafruit_NeoPixel",
-                "C:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\libraries\\RTCLib"
+                "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\Wire\\src",
+                "C:\\Users\\ryank\\Documents\\Arduino\\libraries\\",
+                "C:\\Users\\ryank\\Documents\\Arduino\\libraries\\Adafruit_NeoPixel",
+                "C:\\Users\\ryank\\Documents\\Arduino\\libraries\\RTCLib"
             ],
             "browse": {
                 "limitSymbolsToIncludedHeaders": false,
                 "path": [
                     "C:\\Program Files (x86)\\Arduino\\hardware\\tools\\avr\\include",
                     "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\Wire\\src",
-                    "C:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\libraries\\",
-                    "C:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\libraries\\Adafruit_NeoPixel",
-                    "C:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\libraries\\RTCLib",
+                    "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\Wire\\src",
+                    "C:\\Users\\ryank\\Documents\\Arduino\\libraries\\",
+                    "C:\\Users\\ryank\\Documents\\Arduino\\libraries\\Adafruit_NeoPixel",
+                    "C:\\Users\\ryank\\Documents\\Arduino\\libraries\\RTCLib",
                     "${workspaceRoot}"
                 ]
             },
