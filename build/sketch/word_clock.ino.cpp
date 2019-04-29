@@ -1,6 +1,6 @@
 #include <Arduino.h>
-#line 1 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
-#line 1 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 1 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 1 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 #include <Wire.h>
 #include "RTClib.h"
 #include <Adafruit_NeoPixel.h>
@@ -99,6 +99,8 @@ public:
             return;
         }
 
+        TickDuration = 0;
+
         switch (ActivePattern)
         {
             case HUE_CYCLE:
@@ -136,8 +138,6 @@ public:
 
     void Increment()
     {
-        TickDuration = 0;
-
         if (Direction == FORWARD)
         {
             Index++;
@@ -634,8 +634,8 @@ class WordController
 public:
     ControllerPattern ActivePattern = NONE;
 
-    uint16_t Interval;
-    uint16_t TickDuration;
+    uint8_t Interval;
+    uint8_t TickDuration;
 
     uint8_t Index;
     uint8_t Seed;
@@ -668,14 +668,14 @@ public:
             return;
         }
 
+        TickDuration = 0;
+
         ColorSet(Wheel((Seed + Index) % 256));
         Increment();
     }
 
     void Increment()
     {
-        TickDuration = 0;
-
         Index++;
 
         if (Index >= 256)
@@ -803,39 +803,41 @@ WordController C_OCLOCK(WC_Strip, 114, 119);
 
 // BEGIN EXECUTION
 
-#line 803 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 803 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void setup();
-#line 829 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 829 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void loop();
-#line 839 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 839 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void checkButton();
-#line 855 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 855 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void onButtonUp();
-#line 872 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 872 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void onButtonDown();
-#line 921 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 919 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
+void toggleLightShow();
+#line 935 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 DateTime getTimeWithOffset();
-#line 935 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 949 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void checkTime();
-#line 992 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 1006 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void forceTimeUpdate();
-#line 1002 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 1016 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void updateTime(uint8_t currentHr, uint8_t currentMin);
-#line 1193 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 1207 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void updateControllers();
-#line 1226 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 1240 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void clearControllers();
-#line 1259 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 1273 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void setSpecialPattern(SpecialPattern pattern);
-#line 1280 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 1294 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void pickRandomDemo();
-#line 1316 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 1330 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void updateSpecialPattern();
-#line 1334 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 1348 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void clearSpecialPattern(bool setTime);
-#line 1398 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 1410 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void updateHappyBirthday();
-#line 803 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 803 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void setup()
 {
     Serial.begin(19200);
@@ -900,7 +902,7 @@ void onButtonUp()
 
         if (duration < 2000)
         {
-            setSpecialPattern(SP_LIGHT_SHOW);
+            toggleLightShow();
         }
     }
 }
@@ -950,6 +952,20 @@ void onButtonDown()
     Serial.println();
 
     forceTimeUpdate();
+}
+
+void toggleLightShow()
+{
+    switch (CurrentSpecialPattern)
+    {
+        case NONE:
+            setSpecialPattern(SP_LIGHT_SHOW);
+            return;
+
+        default:
+            clearSpecialPattern(true);
+            return;
+    }
 }
 
 // TIME
@@ -1392,8 +1408,6 @@ void onPatternComplete(ControllerPattern completedPattern)
         clearSpecialPattern(true);
         return;
     }
-
-    Serial.println(completedPattern, DEC);
 
     switch (completedPattern)
     {

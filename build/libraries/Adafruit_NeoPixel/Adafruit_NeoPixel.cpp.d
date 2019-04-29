@@ -1,6 +1,6 @@
-c:\Users\ryank\Documents\Arduino\word_clock\build\libraries\Adafruit_NeoPixel\Adafruit_NeoPixel.cpp.o: \
- C:\Users\ryank\Documents\Arduino\libraries\Adafruit_NeoPixel\Adafruit_NeoPixel.cpp \
- C:\Users\ryank\Documents\Arduino\libraries\Adafruit_NeoPixel\Adafruit_NeoPixel.h \
+c:\Users\ryank\OneDrive\Documents\Arduino\word_clock\build\libraries\Adafruit_NeoPixel\Adafruit_NeoPixel.cpp.o: \
+ C:\Users\ryank\OneDrive\Documents\Arduino\libraries\Adafruit_NeoPixel\Adafruit_NeoPixel.cpp \
+ C:\Users\ryank\OneDrive\Documents\Arduino\libraries\Adafruit_NeoPixel\Adafruit_NeoPixel.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Arduino.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/binary.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/WCharacter.h \

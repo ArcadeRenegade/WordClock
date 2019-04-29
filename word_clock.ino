@@ -96,6 +96,8 @@ public:
             return;
         }
 
+        TickDuration = 0;
+
         switch (ActivePattern)
         {
             case HUE_CYCLE:
@@ -133,8 +135,6 @@ public:
 
     void Increment()
     {
-        TickDuration = 0;
-
         if (Direction == FORWARD)
         {
             Index++;
@@ -631,8 +631,8 @@ class WordController
 public:
     ControllerPattern ActivePattern = NONE;
 
-    uint16_t Interval;
-    uint16_t TickDuration;
+    uint8_t Interval;
+    uint8_t TickDuration;
 
     uint8_t Index;
     uint8_t Seed;
@@ -665,14 +665,14 @@ public:
             return;
         }
 
+        TickDuration = 0;
+
         ColorSet(Wheel((Seed + Index) % 256));
         Increment();
     }
 
     void Increment()
     {
-        TickDuration = 0;
-
         Index++;
 
         if (Index >= 256)
@@ -864,7 +864,7 @@ void onButtonUp()
 
         if (duration < 2000)
         {
-            setSpecialPattern(SP_LIGHT_SHOW);
+            toggleLightShow();
         }
     }
 }
@@ -914,6 +914,20 @@ void onButtonDown()
     Serial.println();
 
     forceTimeUpdate();
+}
+
+void toggleLightShow()
+{
+    switch (CurrentSpecialPattern)
+    {
+        case NONE:
+            setSpecialPattern(SP_LIGHT_SHOW);
+            return;
+
+        default:
+            clearSpecialPattern(true);
+            return;
+    }
 }
 
 // TIME

@@ -1,9 +1,9 @@
-# 1 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
-# 1 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
-# 2 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino" 2
-# 3 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino" 2
-# 4 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino" 2
-# 13 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+# 1 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
+# 1 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
+# 2 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino" 2
+# 3 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino" 2
+# 4 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino" 2
+# 13 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
 // CONTROLLERS
 
 enum ControllerPattern
@@ -90,6 +90,8 @@ public:
             return;
         }
 
+        TickDuration = 0;
+
         switch (ActivePattern)
         {
             case HUE_CYCLE:
@@ -127,8 +129,6 @@ public:
 
     void Increment()
     {
-        TickDuration = 0;
-
         if (Direction == FORWARD)
         {
             Index++;
@@ -172,9 +172,9 @@ public:
         Clear();
 
         if (OnComplete != 
-# 180 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino" 3 4
+# 180 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino" 3 4
                          __null
-# 180 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+# 180 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
                              )
         {
             OnComplete(completedPattern);
@@ -629,8 +629,8 @@ class WordController
 public:
     ControllerPattern ActivePattern = NONE;
 
-    uint16_t Interval;
-    uint16_t TickDuration;
+    uint8_t Interval;
+    uint8_t TickDuration;
 
     uint8_t Index;
     uint8_t Seed;
@@ -663,14 +663,14 @@ public:
             return;
         }
 
+        TickDuration = 0;
+
         ColorSet(Wheel((Seed + Index) % 256));
         Increment();
     }
 
     void Increment()
     {
-        TickDuration = 0;
-
         Index++;
 
         if (Index >= 256)
@@ -818,13 +818,13 @@ void setup()
     {
         Serial.println("RTC lost power, lets set the time!");
         rtc.adjust(DateTime((reinterpret_cast<const __FlashStringHelper *>(
-# 822 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino" 3
-                           (__extension__({static const char __c[] __attribute__((__progmem__)) = ("Apr 27 2019"); &__c[0];}))
-# 822 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+# 822 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino" 3
+                           (__extension__({static const char __c[] __attribute__((__progmem__)) = ("Apr 28 2019"); &__c[0];}))
+# 822 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
                            )), (reinterpret_cast<const __FlashStringHelper *>(
-# 822 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino" 3
-                                        (__extension__({static const char __c[] __attribute__((__progmem__)) = ("17:34:32"); &__c[0];}))
-# 822 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+# 822 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino" 3
+                                        (__extension__({static const char __c[] __attribute__((__progmem__)) = ("23:12:16"); &__c[0];}))
+# 822 "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\word_clock.ino"
                                         ))));
     }
 
@@ -870,7 +870,7 @@ void onButtonUp()
 
         if (duration < 2000)
         {
-            setSpecialPattern(SP_LIGHT_SHOW);
+            toggleLightShow();
         }
     }
 }
@@ -920,6 +920,20 @@ void onButtonDown()
     Serial.println();
 
     forceTimeUpdate();
+}
+
+void toggleLightShow()
+{
+    switch (CurrentSpecialPattern)
+    {
+        case NONE:
+            setSpecialPattern(SP_LIGHT_SHOW);
+            return;
+
+        default:
+            clearSpecialPattern(true);
+            return;
+    }
 }
 
 // TIME
@@ -1362,8 +1376,6 @@ void onPatternComplete(ControllerPattern completedPattern)
         clearSpecialPattern(true);
         return;
     }
-
-    Serial.println(completedPattern, 10);
 
     switch (completedPattern)
     {

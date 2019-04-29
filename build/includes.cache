@@ -10,22 +10,22 @@
     "Includepath": "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\variants\\standard"
   },
   {
-    "Sourcefile": "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\build\\sketch\\word_clock.ino.cpp",
+    "Sourcefile": "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\build\\sketch\\word_clock.ino.cpp",
     "Include": "Wire.h",
     "Includepath": "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\Wire\\src"
   },
   {
-    "Sourcefile": "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\build\\sketch\\word_clock.ino.cpp",
+    "Sourcefile": "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\build\\sketch\\word_clock.ino.cpp",
     "Include": "RTClib.h",
-    "Includepath": "C:\\Users\\ryank\\Documents\\Arduino\\libraries\\RTCLib"
+    "Includepath": "C:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\libraries\\RTCLib"
   },
   {
-    "Sourcefile": "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\build\\sketch\\word_clock.ino.cpp",
+    "Sourcefile": "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\build\\sketch\\word_clock.ino.cpp",
     "Include": "Adafruit_NeoPixel.h",
-    "Includepath": "C:\\Users\\ryank\\Documents\\Arduino\\libraries\\Adafruit_NeoPixel"
+    "Includepath": "C:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\libraries\\Adafruit_NeoPixel"
   },
   {
-    "Sourcefile": "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\build\\sketch\\word_clock.ino.cpp",
+    "Sourcefile": "c:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\word_clock\\build\\sketch\\word_clock.ino.cpp",
     "Include": "",
     "Includepath": ""
   },
@@ -40,17 +40,17 @@
     "Includepath": ""
   },
   {
-    "Sourcefile": "C:\\Users\\ryank\\Documents\\Arduino\\libraries\\RTCLib\\RTClib.cpp",
+    "Sourcefile": "C:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\libraries\\RTCLib\\RTClib.cpp",
     "Include": "",
     "Includepath": ""
   },
   {
-    "Sourcefile": "C:\\Users\\ryank\\Documents\\Arduino\\libraries\\Adafruit_NeoPixel\\Adafruit_NeoPixel.cpp",
+    "Sourcefile": "C:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\libraries\\Adafruit_NeoPixel\\Adafruit_NeoPixel.cpp",
     "Include": "",
     "Includepath": ""
   },
   {
-    "Sourcefile": "C:\\Users\\ryank\\Documents\\Arduino\\libraries\\Adafruit_NeoPixel\\esp8266.c",
+    "Sourcefile": "C:\\Users\\ryank\\OneDrive\\Documents\\Arduino\\libraries\\Adafruit_NeoPixel\\esp8266.c",
     "Include": "",
     "Includepath": ""
   }
