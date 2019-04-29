@@ -644,7 +644,7 @@ public:
 
     const uint8_t StartPixel;
     const uint8_t EndPixel;
-    
+
     WordController(Adafruit_NeoPixel &neoPixel, const uint8_t startPixel, const uint8_t endPixel) : NeoPixel(neoPixel), StartPixel(startPixel), EndPixel(endPixel)
     {
     }
@@ -1028,7 +1028,7 @@ void checkTime()
         setSpecialPattern(SP_LIGHT_SHOW);
         return;
     }
-    
+
     uint8_t currentMonth = dt.month();
     uint8_t currentDay = dt.day();
 
@@ -1434,7 +1434,7 @@ void onPatternComplete(ControllerPattern completedPattern)
         case BOX_ZOOM:
             C_ALL.Snake(21, 4);
             return;
-        
+
         case SNAKE:
             clearSpecialPattern(true);
             return;
