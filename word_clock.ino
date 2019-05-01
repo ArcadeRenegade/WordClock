@@ -7,8 +7,8 @@
 #define LED_COUNT 120
 #define LED_BRIGHTNESS 128
 #define BUTTON_PIN 8
-#define BDAY_MONTH 4
-#define BDAY_DAY 27
+#define BDAY_MONTH 5
+#define BDAY_DAY 3
 
 // CONTROLLERS
 
@@ -383,12 +383,22 @@ public:
     {
         ActivePattern = SCANNER;
         Interval = interval;
-        TotalSteps = (GetNumPixels() - 1) * 2;
+        TotalSteps = GetNumPixels();
         Index = 0;
         Direction = FORWARD;
 
-        Color1 = color == 0 ? GetRandomColor() : color;
-        Color2 = 0;
+        if (color1 == 0 && color2 == 0)
+        {
+            ColorCombo combo = GetRandomColors();
+
+            Color1 = combo.Color1;
+            Color2 = combo.Color2;
+        }
+        else
+        {
+            Color1 = color1;
+            Color2 = color2;
+        }
 
         LoopIndex = 0;
         MaxLoops = loops;
@@ -397,15 +407,28 @@ public:
     // Update the Scanner Pattern
     void ScannerUpdate()
     {
+        uint16_t halfway = TotalSteps / 2;
+
+        uint8_t pixel1;
+        uint8_t pixel2;
+
+        if (Index < halfway) {
+            pixel1 = Index;
+            pixel2 = EndPixel - Index;
+        } else {
+            pixel1 = halfway - (Index % halfway) - 1;
+            pixel2 = halfway + (Index % halfway);
+        }
+
         for (uint8_t i = StartPixel; i <= EndPixel; i++)
         {
-            if (i == Index) // Scan Pixel to the right
+            if (i == pixel1)
             {
                 NeoPixel.setPixelColor(i, Color1);
             }
-            else if (i == TotalSteps - Index) // Scan Pixel to the left
+            else if (i == pixel2)
             {
-                NeoPixel.setPixelColor(i, Color1);
+                NeoPixel.setPixelColor(i, Color2);
             }
             else // Fading tail
             {
