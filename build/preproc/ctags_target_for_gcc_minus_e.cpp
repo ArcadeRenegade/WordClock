@@ -744,7 +744,7 @@ public:
         Increment();
     }
 
-    void RainbowCycle(uint16_t interval = 10, PatternDirection dir = FORWARD, uint8_t loops = 0)
+    void RainbowCycle(uint16_t interval = 4, PatternDirection dir = FORWARD, uint8_t loops = 0)
     {
         ActivePattern = RAINBOW_CYCLE;
         Interval = interval;
@@ -893,7 +893,7 @@ void setup()
 # 892 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
                            )), (reinterpret_cast<const __FlashStringHelper *>(
 # 892 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino" 3
-                                        (__extension__({static const char __c[] __attribute__((__progmem__)) = ("21:29:02"); &__c[0];}))
+                                        (__extension__({static const char __c[] __attribute__((__progmem__)) = ("21:38:48"); &__c[0];}))
 # 892 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
                                         ))));
     }
@@ -1275,7 +1275,7 @@ void updateTime(uint8_t currentHr, uint8_t currentMin)
     }
 
     // OCLOCK
-    C_OCLOCK.RainbowCycle(4);
+    C_OCLOCK.RainbowCycle();
 }
 
 // UPDATE CONTROLLERS
@@ -1498,7 +1498,7 @@ void updateHappyBirthday()
                 return;
             }
 
-            C_HAPPY.HueCycle(4);
+            C_HAPPY.RainbowCycle();
             break;
 
         case 1:
@@ -1508,8 +1508,8 @@ void updateHappyBirthday()
                 return;
             }
 
-            C_BIRTH.HueCycle(4);
-            C_DAY.HueCycle(4);
+            C_BIRTH.RainbowCycle();
+            C_DAY.RainbowCycle();
             break;
 
         case 2:
@@ -1539,9 +1539,9 @@ void updateHappyBirthday()
                 return;
             }
 
-            C_HAPPY.HueCycle(4);
-            C_BIRTH.HueCycle(4);
-            C_DAY.HueCycle(4);
+            C_HAPPY.RainbowCycle();
+            C_BIRTH.RainbowCycle();
+            C_DAY.RainbowCycle();
             C_ALICE.SetSingleColor(WC_Strip.Color(248, 24, 148));
             break;
 
@@ -1562,9 +1562,9 @@ void updateHappyBirthday()
                 return;
             }
 
-            C_HAPPY.HueCycle(4);
-            C_BIRTH.HueCycle(4);
-            C_DAY.HueCycle(4);
+            C_HAPPY.RainbowCycle();
+            C_BIRTH.RainbowCycle();
+            C_DAY.RainbowCycle();
             C_ALICE.SetSingleColor(WC_Strip.Color(248, 24, 148));
             break;
 
@@ -1585,9 +1585,9 @@ void updateHappyBirthday()
                 return;
             }
 
-            C_HAPPY.HueCycle(4);
-            C_BIRTH.HueCycle(4);
-            C_DAY.HueCycle(4);
+            C_HAPPY.RainbowCycle();
+            C_BIRTH.RainbowCycle();
+            C_DAY.RainbowCycle();
             C_ALICE.SetSingleColor(WC_Strip.Color(248, 24, 148));
             break;
 
@@ -1608,9 +1608,9 @@ void updateHappyBirthday()
                 return;
             }
 
-            C_HAPPY.HueCycle(4);
-            C_BIRTH.HueCycle(4);
-            C_DAY.HueCycle(4);
+            C_HAPPY.RainbowCycle();
+            C_BIRTH.RainbowCycle();
+            C_DAY.RainbowCycle();
             C_ALICE.SetSingleColor(WC_Strip.Color(248, 24, 148));
             break;
 
@@ -1631,9 +1631,9 @@ void updateHappyBirthday()
                 return;
             }
 
-            C_HAPPY.HueCycle(4);
-            C_BIRTH.HueCycle(4);
-            C_DAY.HueCycle(4);
+            C_HAPPY.RainbowCycle();
+            C_BIRTH.RainbowCycle();
+            C_DAY.RainbowCycle();
             C_ALICE.SetSingleColor(WC_Strip.Color(248, 24, 148));
             break;
 
