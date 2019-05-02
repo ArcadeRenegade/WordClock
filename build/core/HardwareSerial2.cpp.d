@@ -1,4 +1,4 @@
-c:\Users\ryank\OneDrive\Documents\Arduino\word_clock\build\core\HardwareSerial2.cpp.o: \
+c:\Users\ryank\Documents\Arduino\word_clock\build\core\HardwareSerial2.cpp.o: \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino\HardwareSerial2.cpp \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino\Arduino.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino\binary.h \
