@@ -889,17 +889,17 @@ void setup()
         Serial.println("RTC lost power, lets set the time!");
         rtc.adjust(DateTime((reinterpret_cast<const __FlashStringHelper *>(
 # 892 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino" 3
-                           (__extension__({static const char __c[] __attribute__((__progmem__)) = ("May  1 2019"); &__c[0];}))
+                           (__extension__({static const char __c[] __attribute__((__progmem__)) = ("May 11 2019"); &__c[0];}))
 # 892 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
                            )), (reinterpret_cast<const __FlashStringHelper *>(
 # 892 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino" 3
-                                        (__extension__({static const char __c[] __attribute__((__progmem__)) = ("21:38:48"); &__c[0];}))
+                                        (__extension__({static const char __c[] __attribute__((__progmem__)) = ("18:16:56"); &__c[0];}))
 # 892 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
                                         ))));
     }
 
     WC_Strip.begin();
-    WC_Strip.setBrightness(128);
+    WC_Strip.setBrightness(86);
 }
 
 void loop()
@@ -1061,7 +1061,7 @@ void checkTime()
         return;
     }
 
-    if (currentHr != LastHr && LastHr != 255)
+    if (currentHr == 21 && currentHr != LastHr && LastHr != 255)
     {
         setSpecialPattern(SP_LIGHT_SHOW);
         return;

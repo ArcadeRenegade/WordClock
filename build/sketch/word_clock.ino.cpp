@@ -8,7 +8,7 @@
 #define TIME_CHECK_INTERVAL 10000
 #define LED_PIN 6
 #define LED_COUNT 120
-#define LED_BRIGHTNESS 128
+#define LED_BRIGHTNESS 86
 #define BUTTON_PIN 8
 #define BDAY_MONTH 5
 #define BDAY_DAY 3
@@ -1093,7 +1093,7 @@ void checkTime()
         return;
     }
 
-    if (currentHr != LastHr && LastHr != 255)
+    if (currentHr == 21 && currentHr != LastHr && LastHr != 255)
     {
         setSpecialPattern(SP_LIGHT_SHOW);
         return;
