@@ -889,17 +889,17 @@ void setup()
         Serial.println("RTC lost power, lets set the time!");
         rtc.adjust(DateTime((reinterpret_cast<const __FlashStringHelper *>(
 # 892 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino" 3
-                           (__extension__({static const char __c[] __attribute__((__progmem__)) = ("May 11 2019"); &__c[0];}))
+                           (__extension__({static const char __c[] __attribute__((__progmem__)) = ("Oct 20 2020"); &__c[0];}))
 # 892 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
                            )), (reinterpret_cast<const __FlashStringHelper *>(
 # 892 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino" 3
-                                        (__extension__({static const char __c[] __attribute__((__progmem__)) = ("18:16:56"); &__c[0];}))
+                                        (__extension__({static const char __c[] __attribute__((__progmem__)) = ("00:39:23"); &__c[0];}))
 # 892 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
                                         ))));
     }
 
     WC_Strip.begin();
-    WC_Strip.setBrightness(86);
+    WC_Strip.setBrightness(24);
 }
 
 void loop()
@@ -1076,7 +1076,7 @@ void checkTime()
         return;
     }
 
-    updateTime(currentHr, currentMin);
+    updateTime(currentHr, currentMin, false);
 }
 
 void forceTimeUpdate()
@@ -1086,10 +1086,10 @@ void forceTimeUpdate()
     uint8_t currentHr = dt.hour();
     uint8_t currentMin = dt.minute();
 
-    updateTime(currentHr, currentMin);
+    updateTime(currentHr, currentMin, true);
 }
 
-void updateTime(uint8_t currentHr, uint8_t currentMin)
+void updateTime(uint8_t currentHr, uint8_t currentMin, bool force)
 {
     Serial.print("Updating the time to ");
     Serial.print(currentHr, 10);
@@ -1107,6 +1107,12 @@ void updateTime(uint8_t currentHr, uint8_t currentMin)
 
     // CLEAR ALL CONTROLLERS
     clearControllers();
+
+ // TURN OFF FROM 1 AM To 8 AM
+ if (currentHr >= 1 && currentHr < 8 && !force)
+ {
+        return;
+    }
 
     // IT IS
     C_IT.HueCycle();

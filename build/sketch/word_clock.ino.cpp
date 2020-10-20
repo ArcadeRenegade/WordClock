@@ -8,7 +8,7 @@
 #define TIME_CHECK_INTERVAL 10000
 #define LED_PIN 6
 #define LED_COUNT 120
-#define LED_BRIGHTNESS 86
+#define LED_BRIGHTNESS 24
 #define BUTTON_PIN 8
 #define BDAY_MONTH 5
 #define BDAY_DAY 3
@@ -892,20 +892,20 @@ void checkTime();
 #line 1076 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void forceTimeUpdate();
 #line 1086 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
-void updateTime(uint8_t currentHr, uint8_t currentMin);
-#line 1277 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+void updateTime(uint8_t currentHr, uint8_t currentMin, bool force);
+#line 1283 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void updateControllers();
-#line 1310 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 1316 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void clearControllers();
-#line 1343 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 1349 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void setSpecialPattern(SpecialPattern pattern);
-#line 1364 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 1370 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void pickRandomDemo();
-#line 1400 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 1406 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void updateSpecialPattern();
-#line 1418 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 1424 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void clearSpecialPattern(bool setTime);
-#line 1480 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
+#line 1486 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void updateHappyBirthday();
 #line 873 "c:\\Users\\ryank\\Documents\\Arduino\\word_clock\\word_clock.ino"
 void setup()
@@ -1108,7 +1108,7 @@ void checkTime()
         return;
     }
 
-    updateTime(currentHr, currentMin);
+    updateTime(currentHr, currentMin, false);
 }
 
 void forceTimeUpdate()
@@ -1118,10 +1118,10 @@ void forceTimeUpdate()
     uint8_t currentHr = dt.hour();
     uint8_t currentMin = dt.minute();
 
-    updateTime(currentHr, currentMin);
+    updateTime(currentHr, currentMin, true);
 }
 
-void updateTime(uint8_t currentHr, uint8_t currentMin)
+void updateTime(uint8_t currentHr, uint8_t currentMin, bool force)
 {
     Serial.print("Updating the time to ");
     Serial.print(currentHr, DEC);
@@ -1139,6 +1139,12 @@ void updateTime(uint8_t currentHr, uint8_t currentMin)
 
     // CLEAR ALL CONTROLLERS
     clearControllers();
+
+	// TURN OFF FROM 1 AM To 8 AM
+	if (currentHr >= 1 && currentHr < 8 && !force)
+	{
+        return;
+    }
 
     // IT IS
     C_IT.HueCycle();

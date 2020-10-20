@@ -5,7 +5,7 @@
 #define TIME_CHECK_INTERVAL 10000
 #define LED_PIN 6
 #define LED_COUNT 120
-#define LED_BRIGHTNESS 86
+#define LED_BRIGHTNESS 24
 #define BUTTON_PIN 8
 #define BDAY_MONTH 5
 #define BDAY_DAY 3
@@ -1070,7 +1070,7 @@ void checkTime()
         return;
     }
 
-    updateTime(currentHr, currentMin);
+    updateTime(currentHr, currentMin, false);
 }
 
 void forceTimeUpdate()
@@ -1080,10 +1080,10 @@ void forceTimeUpdate()
     uint8_t currentHr = dt.hour();
     uint8_t currentMin = dt.minute();
 
-    updateTime(currentHr, currentMin);
+    updateTime(currentHr, currentMin, true);
 }
 
-void updateTime(uint8_t currentHr, uint8_t currentMin)
+void updateTime(uint8_t currentHr, uint8_t currentMin, bool force)
 {
     Serial.print("Updating the time to ");
     Serial.print(currentHr, DEC);
@@ -1101,6 +1101,12 @@ void updateTime(uint8_t currentHr, uint8_t currentMin)
 
     // CLEAR ALL CONTROLLERS
     clearControllers();
+
+	// TURN OFF FROM 1 AM To 8 AM
+	if (currentHr >= 1 && currentHr < 8 && !force)
+	{
+        return;
+    }
 
     // IT IS
     C_IT.HueCycle();
