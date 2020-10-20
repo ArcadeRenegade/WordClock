@@ -1102,7 +1102,7 @@ void updateTime(uint8_t currentHr, uint8_t currentMin, bool force)
     // CLEAR ALL CONTROLLERS
     clearControllers();
 
-	// TURN OFF FROM 1 AM To 8 AM
+	// TURN OFF FROM 1 AM TO 8 AM
 	if (currentHr >= 1 && currentHr < 8 && !force)
 	{
         return;
