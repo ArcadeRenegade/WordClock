@@ -1008,9 +1008,16 @@ DateTime getTimeWithOffset()
 
     if (TimeHrOffset != 0)
     {
-        TimeSpan ts = TimeSpan((int32_t)TimeHrOffset * (int32_t)3600);
+        TimeSpan ts = TimeSpan((int32_t)(abs(TimeHrOffset)) * (int32_t)3600);
 
-        dt = dt + ts;
+        if (TimeHrOffset > 0)
+        {
+            dt = dt + ts;
+        }
+        else
+        {
+            dt = dt - ts;
+        }
     }
 
     return dt;
@@ -1102,9 +1109,9 @@ void updateTime(uint8_t currentHr, uint8_t currentMin, bool force)
     // CLEAR ALL CONTROLLERS
     clearControllers();
 
-	// TURN OFF FROM 1 AM TO 8 AM
-	if (currentHr >= 1 && currentHr < 8 && !force)
-	{
+    // TURN OFF FROM 1 AM TO 8 AM
+    if (currentHr >= 1 && currentHr < 8 && !force)
+    {
         return;
     }
 
