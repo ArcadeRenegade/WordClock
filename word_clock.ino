@@ -818,7 +818,7 @@ uint8_t ButtonTick = 0;
 unsigned long LastTimeCheck = 32768;
 uint8_t LastHr = 255;
 uint8_t LastMin = 255;
-uint8_t TimeHrOffset = 0;
+int8_t TimeHrOffset = 0;
 
 enum SpecialPattern
 {
@@ -974,9 +974,9 @@ void onButtonDown()
 
     TimeHrOffset++;
 
-    if (TimeHrOffset >= 12)
+    if (TimeHrOffset >= 6)
     {
-        TimeHrOffset = 0;
+        TimeHrOffset = -6;
     }
 
     Serial.print("Updating time hour offset to ");
